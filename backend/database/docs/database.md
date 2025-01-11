@@ -12,7 +12,7 @@
 * `User`: stores account information for a user
 
 **Task-specific**
-* `TaskProperty:UserTaskProperty|BaseTaskProperty|AutoTaskProperty`
+* `TaskField`
 
 ## System Node Types
 
@@ -21,13 +21,13 @@
 Nodes with `Enum` label store allowable values for a particular property. 
 
 #### `Enum` Node Properties
-* `name: str`
+* `name: str!`
 * `values: array`
 
 #### `Enum` Nodes In Use
 * `Countries: ['United States', 'Canada', ...]`
 * `Langauges: ['English']` supported languages
-* `SupportedTaskPropertyDtypes: ['string', 'int', 'float', 'datetime', ...]`
+* `TaskFieldDtypes: ['string', 'int', 'float', 'datetime', ...]` supported data types for task fields
 * `UserRoles: ['user', 'admin']`
 * `Timezones: [...]`
 
@@ -37,7 +37,7 @@ Nodes with `Enum` label store allowable values for a particular property.
 `Task` nodes contain a few properties necessary for all tasks, listed below. 
 
 #### Properties
-* `id: string | int`
+* `taskId: randomUUID()!`
 * `name: text`
 * `done: bool`
 
@@ -47,39 +47,51 @@ Nodes with `Enum` label store allowable values for a particular property.
 `Task` nodes use `HAS_SUBTASK` edges to denote children, e.g. an individual task contributing to a project or a project contributing to a goal. Note that `Task` nodes can serve any heirarchy: a goal, a project, subproject, etc. Tasks with no `HAS_SUBTASK` relationships are therefore leaf nodes, most likely to be the next actionable items.
 
 * `(:Task)-[:HAS_SUBTASK]->(:Task)` 
-* `(:Task)-[:HAS_PROP]->[:TaskProperty]`
+* `(:Task)-[:HAS_BASE_FIELD]->[:TaskField]` These associate Task nodes with system-defined fields. A use can hide these but not delete them. 
+* `(:Task)-[:HAS_USER_FIELD]->[:TaskField]` For user-defined task fields
+* `(:Task)-[:HAS_SUGG_FIELD]->[:TaskField]` For suggested fields that are not in use
 
-### `TaskProperty` Nodes
-#### Sublabels `UserTaskProperty`, `BaseTaskProperty`, `AutoTaskProperty`
+### `TaskField` Nodes
 
-Each property node gets labeled `TaskProperty` and one of the sublabels, so we can query for all properties or just one of the more specific types. 
-
-In the application and at query time, we must ensure that the `value` set for any task property matches the value stored in the user's `TaskPropertyDefinition` node. For instance, if a user intends a `priority` property to have an `int` value it would cause errors to insert the string `"high priority"`.
-
+Factoring out these 'fields' into their own nodes allows them to have any 
 #### Properties
 * `name: str`
-* `value: any`
+* `value (idx)` must match the datatype noted in the related `UserDefinedField` node
 
 #### Edges
-* `(:Task)-[:HAS_PROP]->[:TaskProperty]`
-* `(:TaskProperty)-[:DEFINED_BY]->[:TaskPropertyDefinition]` when created, a task property should link to its defining node. This way on updates to the task property's value we can validate the data in constant time. NOTE: does creating an index on TaskPropertyDefinition.name obviate this?
+`(f:TaskField)-[:DEFINED_BY]->(udf:UserDefinedField)`
+* `(:Task)-[:HAS_*_FIELD]->(:TaskField)`
 
-#### `BaseTaskProperty` Nodes
+In the application and at query time, we must ensure that the `value` set for any `TaskField` matches the value stored in the user's `UserDefinedField` node. For instance, if a user intends a `priority` property to have an `int` value it would cause errors to insert the string `"high priority"`.
+
+When created, a task property should link to its defining node. This way on updates to the task property's value we can validate the data in constant time. NOTE: does creating an index on TaskPropertyDefinition.name obviate this?
+
+
+#### Base `TaskField` Nodes
 
 Predefined task properties. A user may or may not wish to use these properties, but they are either exceedingly common or useful to the suggestion engine to generate quality completions and insights.
 
-* `name: string`
 * `notes: string`
-* `done: bool`
 * `Done At: datetime | null`
 * `Created At: datetime`
 * `Start After: datetime` -- user can choose to hide this task until this datetime
 * `Last Modified: datetime`
-* `Time Logged: duration`
-* `Estimated Time Remaining: duration`
-* `tags: [string]`
+* `Time Estimate: duration` estimated time to complete this action
+* `Estimated Time Remaining: duration` calculated based on time estimate and logged TimeEntry nodes
+* `tags: [string]` every Task would have an associated TaskField node with name 'tags' whose value is an array of strings
 
-### `TaskPropertyDefinition` Nodes
+### `TimeEntry` Nodes
+#### Properties
+* `uuid: randomUUID()` (primary key)
+* `start: datetime`
+* `end: datetime`
+* `duration: duration` compute this anyway, it will generally be useful
+
+#### Edges
+`(te:TimeEntry)-[:LOGGED_FOR]->(t:Task)`
+`(te:TimeEntry)-[:LOGGED_BY]->(u:User)`
+
+### `UserDefinedField` Nodes
 
 #### Properties
 `name: str`

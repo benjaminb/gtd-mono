@@ -1,0 +1,6 @@
+name,values
+countries,"United States|Mexico|Canada"
+langauges,"English|Spanish|French"
+taskFieldDtypes,"string|int|float|datetime|duration"
+userRoles,"user|admin|root"
+timezones,"EDT|CDT|PST"
