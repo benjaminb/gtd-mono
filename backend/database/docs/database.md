@@ -56,7 +56,7 @@ Nodes with `Enum` label store allowable values for a particular property.
 Factoring out these 'fields' into their own nodes allows them to have any 
 #### Properties
 * `name: str`
-* `value (idx)` must match the datatype noted in the related `UserDefinedField` node
+* `value (index)` must match the datatype noted in the related `UserDefinedField` node
 
 #### Edges
 `(f:TaskField)-[:DEFINED_BY]->(udf:UserDefinedField)`
