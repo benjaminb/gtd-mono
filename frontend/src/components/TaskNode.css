@@ -1,0 +1,101 @@
+.task-node {
+  margin-left: 20px;
+  border-left: 1px solid #ddd;
+  padding-left: 10px;
+  margin-bottom: 4px;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.task-header:hover {
+  background-color: #f5f5f5;
+}
+
+.task-expand-icon {
+  width: 16px;
+  font-size: 10px;
+  cursor: pointer;
+  user-select: none;
+  color: #666;
+}
+
+.task-checkbox {
+  cursor: pointer;
+}
+
+.task-name {
+  flex: 1;
+  font-size: 14px;
+}
+
+.task-name.done {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.has-props-indicator {
+  font-size: 8px;
+  color: #4CAF50;
+}
+
+.task-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.task-header:hover .task-actions {
+  opacity: 1;
+}
+
+.task-actions button {
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.task-actions button:hover {
+  background: #f0f0f0;
+}
+
+.task-details {
+  margin: 8px 0 8px 24px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.task-meta {
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.task-custom-props {
+  margin-top: 8px;
+}
+
+.task-custom-props ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.task-custom-props li {
+  margin: 2px 0;
+}
+
+.task-children {
+  margin-top: 4px;
+}

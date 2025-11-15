@@ -1,0 +1,56 @@
+.task-tree {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.task-tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.task-tree-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.add-task-btn {
+  padding: 10px 20px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.add-task-btn:hover {
+  background: #45a049;
+}
+
+.task-list {
+  margin-top: 10px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.task-tree-loading,
+.task-tree-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+}
+
+.task-tree-error {
+  color: #d32f2f;
+}
