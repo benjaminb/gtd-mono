@@ -1,12 +1,22 @@
 {
   "name": "gtd-mono",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "frontend",
+    "mobile",
+    "backend/database"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:web": "cd frontend && npm run dev",
+    "dev:mobile": "cd mobile && npm start",
+    "dev:backend": "cd backend/database && npm run dev",
+    "build:web": "cd frontend && npm run build",
+    "test": "npm run test --workspaces"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "GTD Task Manager - Monorepo"
 }

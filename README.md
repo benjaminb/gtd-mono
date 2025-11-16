@@ -9,8 +9,10 @@ A comprehensive Getting Things Done (GTD) task management application with AI-po
 - **Flexible Hierarchy** - Organize goals, projects, and actionable items in a tree structure
 - **Custom Properties** - Define task properties with full type enforcement
 - **Property Schema System** - Create reusable property definitions (text, number, date, boolean, dropdown)
-- **Visual Displays** - Tree view and thermometer-style graph view
+- **Time Tracking** - Track time spent on tasks with play/pause controls, session history, and analytics
+- **Visual Displays** - Tree view and thermometer-style graph view with time tracking UI
 - **Real-time Sync** - Changes immediately persisted to Neo4j
+- **Cross-Platform** - Web app (React) and mobile apps (React Native for iOS/Android)
 
 ### AI Integration
 - **Smart Suggestions** - AI suggests subtasks, properties, and related tasks automatically
@@ -47,10 +49,30 @@ A comprehensive Getting Things Done (GTD) task management application with AI-po
          │                            │
          │                            │
          │                            └──────────> LLM APIs
-         │                                        (OpenAI/Anthropic/Ollama)
+┌──────────────────┐                              (OpenAI/Anthropic/Ollama)
+│ React Native App │                  │
+│  (Expo Mobile)   │ ─HTTP─> ─────────┘
+└──────────────────┘
+         │
+         │ (uses shared @gtd/core package)
          │
          └─────> Search/Reports/AI Features
 ```
+
+### Monorepo Structure
+
+This project uses a **monorepo** architecture to share code between web and mobile platforms. The shared business logic lives in `packages/core` and is used by both frontends.
+
+**Code Sharing Breakdown:**
+- ~100% of business logic shared (API client, state management, utilities)
+- ~75% overall code sharing between web and mobile
+- Platform-specific: UI components, navigation, native features
+
+**Benefits:**
+- Single source of truth for types and API client
+- Consistent behavior across platforms
+- Faster development (write once, use everywhere)
+- Easier maintenance
 
 ### Database Schema
 
@@ -71,13 +93,22 @@ A comprehensive Getting Things Done (GTD) task management application with AI-po
 ### Project Structure
 
 ```
-gtd-mono/
+gtd-mono/                         # Monorepo root
+├── packages/                     # Shared packages
+│   └── core/                     # Shared business logic
+│       ├── src/
+│       │   ├── api/              # API client (fetch-based)
+│       │   ├── state/            # TaskContext (works on web + mobile)
+│       │   ├── types/            # TypeScript definitions
+│       │   └── utils/            # Search, time formatting, etc.
+│       ├── package.json
+│       └── tsconfig.json
 ├── backend/
 │   └── database/
 │       ├── src/
 │       │   ├── models/           # Data models (Task, User, PropertySchema)
 │       │   ├── routes/           # API endpoints
-│       │   │   ├── tasks.js      # Task CRUD + search
+│       │   │   ├── tasks.js      # Task CRUD + search + time tracking
 │       │   │   ├── users.js      # Auth endpoints
 │       │   │   ├── suggestions.js # AI suggestions
 │       │   │   ├── analytics.js  # Reports/analytics
@@ -89,11 +120,11 @@ gtd-mono/
 │       │   │   └── database.js   # Neo4j connection
 │       │   └── server.js         # Express app
 │       └── package.json
-├── frontend/
+├── frontend/                     # React web app
 │   └── src/
 │       ├── components/           # React components
 │       │   ├── TaskTree.jsx      # Hierarchical task list
-│       │   ├── GraphView.jsx     # Visual graph display
+│       │   ├── GraphView.jsx     # Visual graph display with time tracking
 │       │   ├── SearchView.jsx    # Boolean search interface
 │       │   ├── ReportsView.jsx   # Analytics dashboard
 │       │   ├── PropertyEditor.jsx # Property schema editing
@@ -107,10 +138,29 @@ gtd-mono/
 │       ├── hooks/
 │       │   └── useAutoSuggestions.js
 │       └── App.jsx
+├── mobile/                       # React Native app (Expo)
+│   ├── src/
+│   │   ├── components/           # React Native components
+│   │   │   └── TaskCard.tsx      # Task display with haptics
+│   │   ├── screens/              # Screen components
+│   │   │   └── TaskListScreen.tsx
+│   │   ├── navigation/           # React Navigation setup
+│   │   │   └── AppNavigator.tsx
+│   │   └── config/
+│   │       └── api.ts            # API configuration
+│   ├── App.tsx
+│   ├── package.json
+│   └── README.md
 ├── docs/                         # Additional documentation
+│   ├── backend-architecture.md
+│   ├── frontend-architecture.md
+│   ├── api-reference.md
+│   ├── mobile-architecture.md
+│   ├── mobile-implementation-guide.md
 │   ├── llm-integration-guide.md
 │   ├── property-schema-guide.md
 │   └── expression-syntax.md
+├── package.json                  # Monorepo root config with workspaces
 └── README.md
 ```
 
@@ -201,7 +251,43 @@ npm run dev
 
 Frontend will open at `http://localhost:5173`
 
-### 4. Use the Application
+### 4. Set Up Mobile App (Optional)
+
+The mobile app requires the backend to be running.
+
+**Initial Setup:**
+```bash
+# From monorepo root
+npm install
+```
+
+**Run on iOS Simulator (Mac only):**
+```bash
+npm run dev:mobile
+# Then press 'i' in the terminal
+```
+
+**Run on Android Emulator:**
+```bash
+npm run dev:mobile
+# Then press 'a' in the terminal
+```
+
+**Run on Physical Device:**
+1. Install Expo Go app on your phone
+2. Run `npm run dev:mobile`
+3. Scan the QR code with Expo Go (Android) or Camera (iOS)
+
+**Configure API URL:**
+
+Edit `mobile/src/config/api.ts` to point to your backend:
+- iOS Simulator: `http://localhost:3000/api`
+- Android Emulator: `http://10.0.2.2:3000/api`
+- Physical Device: `http://YOUR_COMPUTER_IP:3000/api`
+
+See `mobile/README.md` for detailed mobile setup instructions.
+
+### 5. Use the Application
 
 1. **Register** a new account
 2. **Create** your first task
