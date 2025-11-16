@@ -1,0 +1,119 @@
+.emoji-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.emoji-display-btn {
+  width: 48px;
+  height: 48px;
+  font-size: 28px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-display-btn:hover {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.emoji-picker-dropdown {
+  position: absolute;
+  top: 55px;
+  left: 0;
+  width: 320px;
+  max-height: 400px;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.emoji-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-picker-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.close-picker-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 280px;
+}
+
+.emoji-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: 24px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.emoji-btn:hover {
+  background: #f0f4ff;
+  border-color: #667eea;
+  transform: scale(1.1);
+}
+
+.emoji-btn.selected {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+.emoji-picker-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.clear-emoji-btn {
+  width: 100%;
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-emoji-btn:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}

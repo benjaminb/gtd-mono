@@ -181,9 +181,40 @@ Respond with JSON in this exact format:
 Confidence should be 0.0 to 1.0 based on how well you understood the query.`;
 }
 
+/**
+ * Generate prompt for predicting emoji icon for a task
+ * @param {Object} task - The task to predict emoji for
+ * @returns {string}
+ */
+function generateEmojiPredictionPrompt(task) {
+  const customPropsInfo = Object.keys(task.customProperties || {}).length > 0
+    ? `\nTask properties: ${JSON.stringify(task.customProperties, null, 2)}`
+    : '';
+
+  return `You are a task management assistant helping users visualize their tasks with emoji icons.
+
+Given this task:
+"${task.name}"${customPropsInfo}
+
+Predict a single emoji that best represents this task. Consider:
+1. The nature of the task (work, personal, creative, technical, etc.)
+2. The context and properties if available
+3. Common emoji associations (📝 for writing, 💻 for coding, 📧 for email, etc.)
+4. Keep it simple and relevant
+
+Respond with JSON in this exact format:
+{
+  "emoji": "📝",
+  "reasoning": "Brief explanation of why this emoji fits the task"
+}
+
+Only return ONE emoji character. Do not return text or multiple emojis.`;
+}
+
 module.exports = {
   generateSubtaskSuggestionPrompt,
   generatePropertySuggestionPrompt,
   generateRelatedTaskSuggestionPrompt,
-  generateExpressionConversionPrompt
+  generateExpressionConversionPrompt,
+  generateEmojiPredictionPrompt
 };

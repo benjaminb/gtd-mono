@@ -5,7 +5,8 @@ const {
   generateSubtaskSuggestionPrompt,
   generatePropertySuggestionPrompt,
   generateRelatedTaskSuggestionPrompt,
-  generateExpressionConversionPrompt
+  generateExpressionConversionPrompt,
+  generateEmojiPredictionPrompt
 } = require('./prompts');
 
 /**
@@ -219,6 +220,33 @@ class LLMService {
     } catch (error) {
       console.error('Error converting natural language to expression:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Predict emoji icon for a task
+   * @param {Object} task - The task to predict emoji for
+   * @returns {Promise<string>} The predicted emoji character
+   */
+  async predictEmoji(task) {
+    if (!this.provider) {
+      throw new Error('LLM provider not configured');
+    }
+
+    try {
+      const prompt = generateEmojiPredictionPrompt(task);
+
+      const response = await this.provider.completeJSON({
+        prompt,
+        temperature: 0.5
+      });
+
+      // Return the emoji, or a default if not provided
+      return response.emoji || '📋';
+    } catch (error) {
+      console.error('Error predicting emoji:', error);
+      // Return default emoji on error
+      return '📋';
     }
   }
 

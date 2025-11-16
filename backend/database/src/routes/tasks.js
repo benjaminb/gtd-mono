@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
+const llmService = require('../services/llm/LLMService');
 const { filterTasksByExpression, validateExpression } = require('../utils/expressionParser');
 
 /**
@@ -9,7 +10,7 @@ const { filterTasksByExpression, validateExpression } = require('../utils/expres
  */
 router.post('/', async (req, res) => {
   try {
-    const { userId, name, done, source, suggestionMetadata, customProperties } = req.body;
+    let { userId, name, done, emoji, source, suggestionMetadata, customProperties } = req.body;
 
     if (!userId || !name) {
       return res.status(400).json({
@@ -17,10 +18,21 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Automatically predict emoji if not provided and LLM is configured
+    if (!emoji && llmService.isConfigured()) {
+      try {
+        emoji = await llmService.predictEmoji({ name, customProperties: customProperties || {} });
+      } catch (err) {
+        console.log('Failed to predict emoji, using default:', err.message);
+        emoji = '📋'; // Default emoji
+      }
+    }
+
     const task = await Task.create({
       userId,
       name,
       done: done || false,
+      emoji: emoji || null,
       source: source || 'user',
       suggestionMetadata: suggestionMetadata || null,
       customProperties: customProperties || {}

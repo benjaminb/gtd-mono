@@ -40,6 +40,12 @@
   cursor: pointer;
 }
 
+.task-emoji {
+  font-size: 18px;
+  margin-right: 4px;
+  user-select: none;
+}
+
 .task-name {
   flex: 1;
   font-size: 14px;

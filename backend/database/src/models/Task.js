@@ -55,12 +55,13 @@ class Task {
    * @param {string} taskData.userId - Owner user ID
    * @param {string} taskData.name - Task name
    * @param {boolean} [taskData.done=false] - Task completion status
+   * @param {string} [taskData.emoji=null] - Task emoji icon
    * @param {string} [taskData.source='user'] - Source: 'user', 'ai-suggested', 'ai-accepted'
    * @param {Object} [taskData.suggestionMetadata] - Metadata for AI suggestions
    * @param {Object} [taskData.customProperties={}] - Custom user-defined properties
    * @returns {Promise<Object>} Created task
    */
-  static async create({ userId, name, done = false, source = 'user', suggestionMetadata = null, customProperties = {} }) {
+  static async create({ userId, name, done = false, emoji = null, source = 'user', suggestionMetadata = null, customProperties = {} }) {
     // Validate custom properties against schemas
     const validation = await Task.validateCustomProperties(userId, customProperties);
     if (!validation.valid) {
@@ -79,6 +80,7 @@ class Task {
            id: $id,
            name: $name,
            done: $done,
+           emoji: $emoji,
            source: $source,
            suggestionMetadata: $suggestionMetadata,
            createdAt: $createdAt,
@@ -92,6 +94,7 @@ class Task {
           id,
           name,
           done,
+          emoji,
           source,
           suggestionMetadata: suggestionMetadata ? JSON.stringify(suggestionMetadata) : null,
           createdAt,
@@ -169,7 +172,7 @@ class Task {
 
     const session = driver.session();
     try {
-      const allowedFields = ['name', 'done', 'source', 'suggestionMetadata', 'customProperties'];
+      const allowedFields = ['name', 'done', 'emoji', 'source', 'suggestionMetadata', 'customProperties'];
       const setClause = ['t.updatedAt = $updatedAt'];
       const params = {
         id,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTask } from '../context/TaskContext';
 import PropertyEditor from './PropertyEditor';
+import EmojiPicker from './EmojiPicker';
 import './TaskForm.css';
 
 const TaskForm = ({ task, parentTask, onClose }) => {
@@ -8,6 +9,7 @@ const TaskForm = ({ task, parentTask, onClose }) => {
 
   const [name, setName] = useState(task?.name || '');
   const [done, setDone] = useState(task?.done || false);
+  const [emoji, setEmoji] = useState(task?.emoji || null);
   const [customProperties, setCustomProperties] = useState(task?.customProperties || {});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -32,6 +34,7 @@ const TaskForm = ({ task, parentTask, onClose }) => {
         await updateTask(task.id, {
           name,
           done,
+          emoji,
           customProperties
         });
       } else {
@@ -39,6 +42,7 @@ const TaskForm = ({ task, parentTask, onClose }) => {
         const newTask = await createTask({
           name,
           done,
+          emoji,
           customProperties
         });
 
@@ -75,6 +79,12 @@ const TaskForm = ({ task, parentTask, onClose }) => {
               autoFocus
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label>Emoji Icon</label>
+            <EmojiPicker value={emoji} onChange={setEmoji} />
+            <p className="form-hint">Select an emoji to represent this task</p>
           </div>
 
           <div className="form-group">

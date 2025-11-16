@@ -111,6 +111,12 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
           className="task-checkbox"
         />
 
+        {task.emoji && (
+          <span className="task-emoji" title="Task emoji">
+            {task.emoji}
+          </span>
+        )}
+
         <span className={`task-name ${task.done ? 'done' : ''}`}>
           {task.name}
         </span>

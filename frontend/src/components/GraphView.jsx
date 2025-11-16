@@ -182,7 +182,8 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
           const rectX = node.x + circleRadius;
           const rectY = node.y - rectHeight / 2;
 
-          // Get first letter of task name
+          // Get emoji or first letter of task name
+          const emoji = node.task.emoji;
           const firstLetter = node.task.name.charAt(0).toUpperCase();
 
           // Truncate task name for display
@@ -222,16 +223,16 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                 strokeDasharray={strokeDasharray}
               />
 
-              {/* First letter in circle */}
+              {/* Emoji or first letter in circle */}
               <text
                 x={node.x}
-                y={node.y + 8}
+                y={node.y + (emoji ? 10 : 8)}
                 textAnchor="middle"
-                fontSize="20"
+                fontSize={emoji ? "24" : "20"}
                 fill="white"
-                fontWeight="bold"
+                fontWeight={emoji ? "normal" : "bold"}
               >
-                {firstLetter}
+                {emoji || firstLetter}
               </text>
 
               {/* Task name in rectangle */}
