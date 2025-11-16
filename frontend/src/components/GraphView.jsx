@@ -192,11 +192,34 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
             ? node.task.name.substring(0, 20) + '...'
             : node.task.name;
 
+          const isHovered = hoveredNode === node.id;
+          const isTracking = activeTimeTracking === node.id;
+          const timeTracking = node.task.timeTracking || { totalSeconds: 0, currentSessionStart: null };
+
+          // Calculate total time including current session
+          let totalSeconds = timeTracking.totalSeconds || 0;
+          if (timeTracking.currentSessionStart) {
+            const startTime = new Date(timeTracking.currentSessionStart);
+            const now = new Date();
+            totalSeconds += Math.floor((now - startTime) / 1000);
+          }
+
+          // Format time display
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+          // Play/pause button position (on the right)
+          const playPauseX = rectX + rectWidth + 35;
+          const playPauseY = node.y;
+          const playPauseRadius = 18;
+
           return (
             <g
               key={node.id}
               className={`graph-node ${selectedTask?.id === node.id ? 'selected' : ''} ${node.task.done ? 'done' : ''} ${isAiSuggested ? 'ai-suggested' : ''} ${isAiAccepted ? 'ai-accepted' : ''}`}
-              onClick={() => handleNodeClick(node)}
+              onMouseEnter={() => setHoveredNode(node.id)}
+              onMouseLeave={() => setHoveredNode(null)}
               style={{ cursor: 'pointer' }}
             >
               {/* Rectangle (body of thermometer) */}
@@ -210,9 +233,10 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                 strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
                 strokeDasharray={strokeDasharray}
                 rx="4"
+                onClick={() => handleNodeClick(node)}
               />
 
-              {/* Circle (bulb of thermometer) */}
+              {/* Circle (bulb of thermometer) - main task indicator */}
               <circle
                 cx={node.x}
                 cy={node.y}
@@ -222,19 +246,57 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                 stroke={selectedTask?.id === node.id ? '#ff9800' : '#5568d3'}
                 strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
                 strokeDasharray={strokeDasharray}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (isHovered) {
+                    // Toggle done status on click when hovered
+                    await updateTask(node.task.id, { done: !node.task.done });
+                  }
+                }}
+                style={{ cursor: isHovered ? 'pointer' : 'default' }}
               />
 
-              {/* Emoji or first letter in circle */}
-              <text
-                x={node.x}
-                y={node.y + (emoji ? 10 : 8)}
-                textAnchor="middle"
-                fontSize={emoji ? "24" : "20"}
-                fill="white"
-                fontWeight={emoji ? "normal" : "bold"}
-              >
-                {emoji || firstLetter}
-              </text>
+              {/* Checkmark or emoji/letter in circle */}
+              {isHovered ? (
+                // Show checkmark when hovered
+                node.task.done ? (
+                  <text
+                    x={node.x}
+                    y={node.y + 8}
+                    textAnchor="middle"
+                    fontSize="24"
+                    fill="white"
+                    fontWeight="bold"
+                    pointerEvents="none"
+                  >
+                    ✓
+                  </text>
+                ) : (
+                  // Show empty checkbox circle when hovered and not done
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={circleRadius - 6}
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="3"
+                    pointerEvents="none"
+                  />
+                )
+              ) : (
+                // Show emoji or letter when not hovered
+                <text
+                  x={node.x}
+                  y={node.y + (emoji ? 10 : 8)}
+                  textAnchor="middle"
+                  fontSize={emoji ? "24" : "20"}
+                  fill="white"
+                  fontWeight={emoji ? "normal" : "bold"}
+                  pointerEvents="none"
+                >
+                  {emoji || firstLetter}
+                </text>
+              )}
 
               {/* Task name in rectangle */}
               <text
@@ -248,6 +310,21 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                 {displayName}
               </text>
 
+              {/* Time display below task name */}
+              {totalSeconds > 0 && (
+                <text
+                  x={rectX + 10}
+                  y={node.y + 18}
+                  textAnchor="start"
+                  fontSize="11"
+                  fill={isTracking ? '#ff9800' : '#999'}
+                  fontWeight={isTracking ? "600" : "normal"}
+                  pointerEvents="none"
+                >
+                  {isTracking ? '⏱ ' : '🕐 '}{timeDisplay}
+                </text>
+              )}
+
               {/* AI badge in rectangle if applicable */}
               {isAiSuggested && (
                 <text
@@ -257,6 +334,7 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                   fontSize="10"
                   fill="#667eea"
                   fontWeight="bold"
+                  pointerEvents="none"
                 >
                   AI
                 </text>
@@ -269,9 +347,62 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                   fontSize="10"
                   fill="#4CAF50"
                   fontWeight="bold"
+                  pointerEvents="none"
                 >
                   ✓ AI
                 </text>
+              )}
+
+              {/* Play/Pause button (appears on hover or when tracking) */}
+              {(isHovered || isTracking) && (
+                <g
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await toggleTimeTracking(node.task.id);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Play/Pause button bulb */}
+                  <circle
+                    cx={playPauseX}
+                    cy={playPauseY}
+                    r={playPauseRadius}
+                    fill={isTracking ? '#ff9800' : '#667eea'}
+                    stroke={isTracking ? '#e68900' : '#5568d3'}
+                    strokeWidth="2"
+                    className="play-pause-bulb"
+                  />
+
+                  {/* Play or Pause icon */}
+                  {isTracking ? (
+                    // Pause icon (two bars)
+                    <g pointerEvents="none">
+                      <rect
+                        x={playPauseX - 5}
+                        y={playPauseY - 6}
+                        width="4"
+                        height="12"
+                        fill="white"
+                        rx="1"
+                      />
+                      <rect
+                        x={playPauseX + 1}
+                        y={playPauseY - 6}
+                        width="4"
+                        height="12"
+                        fill="white"
+                        rx="1"
+                      />
+                    </g>
+                  ) : (
+                    // Play icon (triangle)
+                    <polygon
+                      points={`${playPauseX - 4},${playPauseY - 6} ${playPauseX - 4},${playPauseY + 6} ${playPauseX + 6},${playPauseY}`}
+                      fill="white"
+                      pointerEvents="none"
+                    />
+                  )}
+                </g>
               )}
             </g>
           );

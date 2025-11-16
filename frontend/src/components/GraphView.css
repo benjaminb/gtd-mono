@@ -276,3 +276,13 @@
   background: #4CAF50;
   color: white;
 }
+
+/* Time Tracking Button */
+.play-pause-bulb {
+  transition: all 0.2s;
+}
+
+.play-pause-bulb:hover {
+  filter: brightness(1.15);
+  transform: scale(1.05);
+}
