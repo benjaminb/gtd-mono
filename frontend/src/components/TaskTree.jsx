@@ -7,6 +7,7 @@ import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
 import GraphView from './GraphView';
 import SuggestionsPanel from './SuggestionsPanel';
+import PropertySchemaManager from './PropertySchemaManager';
 import './TaskTree.css';
 
 const TaskTree = () => {
@@ -16,6 +17,7 @@ const TaskTree = () => {
   const [parentForNewTask, setParentForNewTask] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'graph'
+  const [showSchemaManager, setShowSchemaManager] = useState(false);
 
   const rootTasks = getRootTasks();
 
@@ -85,6 +87,13 @@ const TaskTree = () => {
               ◉ Graph
             </button>
           </div>
+          <button
+            className="manage-properties-btn"
+            onClick={() => setShowSchemaManager(true)}
+            title="Manage property schemas"
+          >
+            ⚙ Properties
+          </button>
           <button className="add-task-btn" onClick={handleAddTask}>
             + Add Task
           </button>
@@ -137,6 +146,12 @@ const TaskTree = () => {
           task={editingTask}
           parentTask={parentForNewTask}
           onClose={handleCloseForm}
+        />
+      )}
+
+      {showSchemaManager && (
+        <PropertySchemaManager
+          onClose={() => setShowSchemaManager(false)}
         />
       )}
     </div>
