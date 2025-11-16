@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTask } from '../context/TaskContext';
+import { useAutoSuggestions } from '../hooks/useAutoSuggestions';
 import './TaskNode.css';
 
 const TaskNode = ({ task, onEdit, onAddSubtask }) => {
@@ -8,6 +9,14 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
   const [showDetails, setShowDetails] = useState(false);
   const children = getChildren(task.id);
   const hasChildren = children.length > 0;
+
+  // Auto-generate subtask suggestions when user views task details
+  const source = task.source || 'user';
+  const isUserTask = source === 'user' || source === 'ai-accepted';
+  useAutoSuggestions(
+    showDetails && isUserTask ? task : null,
+    { suggestionType: 'subtasks', debounceMs: 1500 }
+  );
 
   // Check if this task directly matches the filter
   const directMatch = matchesFilters(task);

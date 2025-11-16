@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTask } from '../context/TaskContext';
+import { useAutoSuggestions } from '../hooks/useAutoSuggestions';
 import './GraphView.css';
 
 const GraphView = ({ onEditTask, onAddSubtask }) => {
@@ -7,6 +8,13 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const svgRef = useRef(null);
+
+  // Auto-generate subtask suggestions when user selects a task
+  const isUserTask = selectedTask && (selectedTask.source === 'user' || selectedTask.source === 'ai-accepted');
+  useAutoSuggestions(
+    isUserTask ? selectedTask : null,
+    { suggestionType: 'subtasks', debounceMs: 2000 }
+  );
 
   // Build graph structure and calculate positions
   useEffect(() => {

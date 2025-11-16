@@ -117,6 +117,43 @@ class ApiService {
     });
     if (!response.ok) throw new Error('Failed to reject suggestion');
   }
+
+  // Suggestion endpoints
+  async getSuggestionsSubtasks(taskId, userId) {
+    const response = await fetch(`${API_BASE}/suggestions/subtasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId, userId })
+    });
+    if (!response.ok) throw new Error('Failed to get subtask suggestions');
+    return response.json();
+  }
+
+  async getSuggestionsProperties(taskId, allPropertyNames = []) {
+    const response = await fetch(`${API_BASE}/suggestions/properties`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId, allPropertyNames })
+    });
+    if (!response.ok) throw new Error('Failed to get property suggestions');
+    return response.json();
+  }
+
+  async getSuggestionsRelatedTasks(taskId, userId) {
+    const response = await fetch(`${API_BASE}/suggestions/related-tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId, userId })
+    });
+    if (!response.ok) throw new Error('Failed to get related task suggestions');
+    return response.json();
+  }
+
+  async getSuggestionsStatus() {
+    const response = await fetch(`${API_BASE}/suggestions/status`);
+    if (!response.ok) throw new Error('Failed to check suggestions status');
+    return response.json();
+  }
 }
 
 export default new ApiService();
