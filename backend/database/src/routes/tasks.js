@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
+const { filterTasksByExpression, validateExpression } = require('../utils/expressionParser');
 
 /**
  * POST /api/tasks
@@ -226,6 +227,79 @@ router.delete('/:id/reject-suggestion', async (req, res) => {
   } catch (error) {
     console.error('Error rejecting suggestion:', error);
     res.status(500).json({ error: 'Failed to reject suggestion' });
+  }
+});
+
+/**
+ * POST /api/tasks/search
+ * Search/filter tasks by boolean expression
+ * Body: { userId, expression }
+ */
+router.post('/search', async (req, res) => {
+  try {
+    const { userId, expression } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    if (!expression || expression.trim() === '') {
+      return res.status(400).json({ error: 'expression is required' });
+    }
+
+    // Validate expression first
+    const validation = validateExpression(expression);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Invalid expression',
+        details: validation.error
+      });
+    }
+
+    // Get all user tasks
+    const allTasks = await Task.findByUserId(userId);
+
+    // Filter by expression
+    const matchingTasks = filterTasksByExpression(allTasks, expression);
+
+    res.json({
+      expression,
+      ast: validation.ast,
+      totalTasks: allTasks.length,
+      matchingTasks: matchingTasks.length,
+      tasks: matchingTasks
+    });
+  } catch (error) {
+    console.error('Error searching tasks:', error);
+    res.status(500).json({
+      error: 'Failed to search tasks',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/tasks/validate-expression
+ * Validate a boolean expression without executing it
+ * Body: { expression }
+ */
+router.post('/validate-expression', async (req, res) => {
+  try {
+    const { expression } = req.body;
+
+    if (!expression || expression.trim() === '') {
+      return res.status(400).json({ error: 'expression is required' });
+    }
+
+    const validation = validateExpression(expression);
+
+    res.json(validation);
+  } catch (error) {
+    console.error('Error validating expression:', error);
+    res.status(500).json({
+      error: 'Failed to validate expression',
+      details: error.message
+    });
   }
 });
 

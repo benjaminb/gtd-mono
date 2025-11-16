@@ -180,6 +180,42 @@ router.post('/related-tasks', async (req, res) => {
 });
 
 /**
+ * POST /api/suggestions/convert-to-expression
+ * Convert natural language query to boolean expression
+ * Body: { naturalLanguage: string, userId: string }
+ */
+router.post('/convert-to-expression', async (req, res) => {
+  try {
+    const { naturalLanguage, userId } = req.body;
+
+    if (!naturalLanguage) {
+      return res.status(400).json({
+        error: 'Missing required field: naturalLanguage'
+      });
+    }
+
+    // Get available property names if userId provided
+    let availableProperties = [];
+    if (userId) {
+      const PropertySchema = require('../models/PropertySchema');
+      const schemas = await PropertySchema.getUserSchemas(userId);
+      availableProperties = schemas.map(s => s.propertyName);
+    }
+
+    // Convert to expression using LLM
+    const result = await llmService.convertToExpression(naturalLanguage, availableProperties);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error converting to expression:', error);
+    res.status(500).json({
+      error: 'Failed to convert query to expression',
+      message: error.message
+    });
+  }
+});
+
+/**
  * GET /api/suggestions/status
  * Check LLM service status and configuration
  */

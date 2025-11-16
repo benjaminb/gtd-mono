@@ -130,8 +130,60 @@ Respond with JSON in this exact format:
 Keep task names concise and actionable. Confidence should be 0.0 to 1.0.`;
 }
 
+/**
+ * Generate prompt for converting natural language to boolean expression
+ * @param {string} naturalLanguage - User's natural language query
+ * @param {Array} availableProperties - Available property names
+ * @returns {string}
+ */
+function generateExpressionConversionPrompt(naturalLanguage, availableProperties = []) {
+  const propertiesInfo = availableProperties.length > 0
+    ? `\n\nAvailable custom properties:\n${availableProperties.map(p => `- ${p}`).join('\n')}`
+    : '';
+
+  return `You are a query builder assistant that converts natural language queries into structured boolean expressions.
+
+Natural language query:
+"${naturalLanguage}"
+
+Built-in task properties:
+- name (or title) - The task name/description (string)
+- done (or completed) - Whether task is completed (boolean: true/false)
+- source - Origin of task: "user", "ai-suggested", "ai-accepted" (string)${propertiesInfo}
+
+Supported operators:
+- Comparison: =, !=, <, >, <=, >=, contains, not contains
+- Boolean: AND, OR, NOT
+- Parentheses for grouping: ( )
+- Special date values: today, yesterday, tomorrow
+
+Convert the natural language query into a boolean expression. Examples:
+
+Natural: "high priority tasks due today"
+Expression: "priority = high AND due date = today"
+
+Natural: "show me incomplete tasks that aren't at home"
+Expression: "done = false AND location != home"
+
+Natural: "tasks with priority 1 or 2 that are done"
+Expression: "(priority = 1 OR priority = 2) AND done = true"
+
+Natural: "find tasks that mention meeting"
+Expression: "name contains meeting"
+
+Respond with JSON in this exact format:
+{
+  "expression": "the boolean expression",
+  "explanation": "brief explanation of what the expression matches",
+  "confidence": 0.9
+}
+
+Confidence should be 0.0 to 1.0 based on how well you understood the query.`;
+}
+
 module.exports = {
   generateSubtaskSuggestionPrompt,
   generatePropertySuggestionPrompt,
-  generateRelatedTaskSuggestionPrompt
+  generateRelatedTaskSuggestionPrompt,
+  generateExpressionConversionPrompt
 };

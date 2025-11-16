@@ -4,7 +4,8 @@ const OllamaProvider = require('./OllamaProvider');
 const {
   generateSubtaskSuggestionPrompt,
   generatePropertySuggestionPrompt,
-  generateRelatedTaskSuggestionPrompt
+  generateRelatedTaskSuggestionPrompt,
+  generateExpressionConversionPrompt
 } = require('./prompts');
 
 /**
@@ -186,6 +187,37 @@ class LLMService {
       return suggestions;
     } catch (error) {
       console.error('Error generating related task suggestions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Convert natural language query to boolean expression
+   * @param {string} naturalLanguage - User's natural language query
+   * @param {Array} availableProperties - Available custom property names
+   * @returns {Promise<Object>} Object with expression, explanation, and confidence
+   */
+  async convertToExpression(naturalLanguage, availableProperties = []) {
+    if (!this.provider) {
+      throw new Error('LLM provider not configured');
+    }
+
+    try {
+      const prompt = generateExpressionConversionPrompt(naturalLanguage, availableProperties);
+
+      const response = await this.provider.completeJSON({
+        prompt,
+        temperature: 0.3 // Lower temperature for more deterministic output
+      });
+
+      return {
+        expression: response.expression,
+        explanation: response.explanation || '',
+        confidence: Math.min(Math.max(response.confidence || 0.5, 0), 1),
+        originalQuery: naturalLanguage
+      };
+    } catch (error) {
+      console.error('Error converting natural language to expression:', error);
       throw error;
     }
   }

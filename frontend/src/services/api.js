@@ -255,6 +255,40 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to fetch property distribution');
     return response.json();
   }
+
+  // Search/Expression endpoints
+  async searchTasks(userId, expression) {
+    const response = await fetch(`${API_BASE}/tasks/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, expression })
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || 'Failed to search tasks');
+    }
+    return response.json();
+  }
+
+  async validateExpression(expression) {
+    const response = await fetch(`${API_BASE}/tasks/validate-expression`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expression })
+    });
+    if (!response.ok) throw new Error('Failed to validate expression');
+    return response.json();
+  }
+
+  async convertNaturalLanguageToExpression(naturalLanguage, userId) {
+    const response = await fetch(`${API_BASE}/suggestions/convert-to-expression`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ naturalLanguage, userId })
+    });
+    if (!response.ok) throw new Error('Failed to convert natural language');
+    return response.json();
+  }
 }
 
 export default new ApiService();

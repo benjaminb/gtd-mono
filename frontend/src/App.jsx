@@ -5,6 +5,7 @@ import { PropertySchemaProvider } from './context/PropertySchemaContext';
 import Auth from './components/Auth';
 import TaskTree from './components/TaskTree';
 import ReportsView from './components/ReportsView';
+import SearchView from './components/SearchView';
 import './App.css';
 
 function AppContent() {
@@ -28,6 +29,12 @@ function AppContent() {
               Tasks
             </button>
             <button
+              className={`nav-btn ${currentView === 'search' ? 'active' : ''}`}
+              onClick={() => setCurrentView('search')}
+            >
+              Search
+            </button>
+            <button
               className={`nav-btn ${currentView === 'reports' ? 'active' : ''}`}
               onClick={() => setCurrentView('reports')}
             >
@@ -46,7 +53,9 @@ function AppContent() {
       <main className="app-main">
         <PropertySchemaProvider>
           <TaskProvider userId={user.id}>
-            {currentView === 'tasks' ? <TaskTree /> : <ReportsView />}
+            {currentView === 'tasks' && <TaskTree />}
+            {currentView === 'search' && <SearchView />}
+            {currentView === 'reports' && <ReportsView />}
           </TaskProvider>
         </PropertySchemaProvider>
       </main>
