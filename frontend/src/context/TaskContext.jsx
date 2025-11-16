@@ -19,6 +19,11 @@ export const TaskProvider = ({ children, userId }) => {
   const [availableProperties, setAvailableProperties] = useState([
     'priority', 'dueDate', 'tags', 'notes', 'status'
   ]); // Available custom properties
+  const [filters, setFilters] = useState({
+    name: '',
+    done: 'all',
+    customProperties: {}
+  });
 
   // Load all tasks on mount
   useEffect(() => {
@@ -61,18 +66,76 @@ export const TaskProvider = ({ children, userId }) => {
     }
   };
 
+  // Check if a task matches current filters
+  const matchesFilters = (task) => {
+    // Name filter (case-insensitive)
+    if (filters.name && !task.name.toLowerCase().includes(filters.name.toLowerCase())) {
+      return false;
+    }
+
+    // Done filter
+    if (filters.done === 'done' && !task.done) {
+      return false;
+    }
+    if (filters.done === 'notDone' && task.done) {
+      return false;
+    }
+
+    // Custom properties filters
+    for (const [propName, filterValue] of Object.entries(filters.customProperties)) {
+      if (!filterValue) continue; // Skip empty filters
+
+      const taskPropValue = task.customProperties?.[propName];
+      if (!taskPropValue) {
+        return false; // Task doesn't have this property
+      }
+
+      // Case-insensitive substring match
+      if (!String(taskPropValue).toLowerCase().includes(filterValue.toLowerCase())) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Check if a task or any of its descendants match filters
+  const taskOrDescendantsMatch = (task) => {
+    // If the task itself matches, show it
+    if (matchesFilters(task)) {
+      return true;
+    }
+
+    // Check if any descendants match
+    const childIds = taskRelationships[task.id] || [];
+    for (const childId of childIds) {
+      const childTask = tasks.find(t => t.id === childId);
+      if (childTask && taskOrDescendantsMatch(childTask)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   // Get root tasks (tasks with no parents)
   const getRootTasks = () => {
     const childIds = new Set(
       Object.values(taskRelationships).flat()
     );
-    return tasks.filter(task => !childIds.has(task.id));
+    const rootTasks = tasks.filter(task => !childIds.has(task.id));
+
+    // Apply filters: show root task if it or any descendant matches
+    return rootTasks.filter(task => taskOrDescendantsMatch(task));
   };
 
   // Get children of a task
   const getChildren = (taskId) => {
     const childIds = taskRelationships[taskId] || [];
-    return childIds.map(id => tasks.find(t => t.id === id)).filter(Boolean);
+    const children = childIds.map(id => tasks.find(t => t.id === id)).filter(Boolean);
+
+    // Apply filters: show child if it or any of its descendants match
+    return children.filter(task => taskOrDescendantsMatch(task));
   };
 
   // Create a new task
@@ -187,7 +250,10 @@ export const TaskProvider = ({ children, userId }) => {
     removeSubtask,
     loadAllTasks,
     availableProperties,
-    addCustomProperty
+    addCustomProperty,
+    filters,
+    setFilters,
+    matchesFilters
   };
 
   return (

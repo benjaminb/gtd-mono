@@ -3,11 +3,19 @@ import { useTask } from '../context/TaskContext';
 import './TaskNode.css';
 
 const TaskNode = ({ task, onEdit, onAddSubtask }) => {
-  const { getChildren, updateTask, deleteTask } = useTask();
+  const { getChildren, updateTask, deleteTask, matchesFilters, filters } = useTask();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const children = getChildren(task.id);
   const hasChildren = children.length > 0;
+
+  // Check if this task directly matches the filter
+  const directMatch = matchesFilters(task);
+
+  // Check if any filters are active
+  const hasActiveFilters = filters.name !== '' ||
+                          filters.done !== 'all' ||
+                          Object.keys(filters.customProperties).length > 0;
 
   const toggleExpanded = (e) => {
     e.stopPropagation();
@@ -55,7 +63,10 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
 
   return (
     <div className="task-node">
-      <div className="task-header" onClick={toggleDetails}>
+      <div
+        className={`task-header ${hasActiveFilters && directMatch ? 'filter-match' : ''}`}
+        onClick={toggleDetails}
+      >
         <span className="task-expand-icon" onClick={toggleExpanded}>
           {hasChildren ? (isExpanded ? '▼' : '▶') : '  '}
         </span>

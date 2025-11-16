@@ -19,6 +19,15 @@
   background-color: #f5f5f5;
 }
 
+.task-header.filter-match {
+  background-color: #fff3cd;
+  border-left: 3px solid #ffc107;
+}
+
+.task-header.filter-match:hover {
+  background-color: #ffe8a1;
+}
+
 .task-expand-icon {
   width: 16px;
   font-size: 10px;

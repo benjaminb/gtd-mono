@@ -1,0 +1,157 @@
+.filter-panel {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-toggle {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+}
+
+.filter-toggle:hover {
+  color: #667eea;
+}
+
+.filter-count {
+  background: #667eea;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.clear-filters {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clear-filters:hover {
+  background: #e0e0e0;
+}
+
+.filter-content {
+  padding: 16px;
+}
+
+.filter-group {
+  margin-bottom: 16px;
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.filter-group input[type="text"],
+.filter-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.filter-group input[type="text"]:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.custom-prop-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.custom-prop-filter label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.custom-prop-input {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-prop-input input {
+  flex: 1;
+}
+
+.remove-filter {
+  padding: 4px 10px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.remove-filter:hover {
+  background: #da190b;
+}
+
+.add-custom-filter select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px dashed #999;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+}
+
+.add-custom-filter select:hover {
+  border-color: #667eea;
+}
+
+.active-filters-summary {
+  padding: 8px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.filter-tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
