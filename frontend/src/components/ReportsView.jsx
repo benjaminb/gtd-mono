@@ -18,6 +18,12 @@ const ReportsView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Filter state
+  const [filterMode, setFilterMode] = useState('none'); // 'none', 'expression', 'natural'
+  const [filterExpression, setFilterExpression] = useState('');
+  const [naturalLanguageFilter, setNaturalLanguageFilter] = useState('');
+  const [convertingFilter, setConvertingFilter] = useState(false);
+
   // Get list of properties with select type for filtering
   const selectProperties = schemas.filter(s => s.dataType === 'select');
 
@@ -25,7 +31,34 @@ const ReportsView = () => {
     if (user) {
       loadReportData();
     }
-  }, [user, reportType, timeRange, selectedProperty, inactivityDays]);
+  }, [user, reportType, timeRange, selectedProperty, inactivityDays, filterExpression]);
+
+  const convertNaturalLanguageToExpression = async () => {
+    if (!naturalLanguageFilter.trim()) return;
+
+    setConvertingFilter(true);
+    setError(null);
+
+    try {
+      const result = await api.convertNaturalLanguageToExpression(
+        naturalLanguageFilter,
+        user.id
+      );
+      setFilterExpression(result.expression);
+      setFilterMode('expression');
+    } catch (err) {
+      console.error('Error converting filter:', err);
+      setError('Failed to convert filter: ' + err.message);
+    } finally {
+      setConvertingFilter(false);
+    }
+  };
+
+  const clearFilter = () => {
+    setFilterExpression('');
+    setNaturalLanguageFilter('');
+    setFilterMode('none');
+  };
 
   const getDateRange = () => {
     const endDate = new Date();
@@ -65,17 +98,20 @@ const ReportsView = () => {
     try {
       const { startDate, endDate } = getDateRange();
 
+      const filter = filterExpression.trim() || null;
+
       switch (reportType) {
         case 'completion-by-parent': {
           const result = await api.getCompletionAnalytics(user.id, {
             startDate,
             endDate,
-            groupBy: 'parent'
+            groupBy: 'parent',
+            filter
           });
 
           setChartData({
             type: 'bar',
-            title: 'Task Completion by Parent Task',
+            title: 'Task Completion by Parent Task' + (filter ? ' (Filtered)' : ''),
             data: result.data.map(item => ({
               label: item.parentName,
               value: item.totalTasks,
@@ -95,12 +131,13 @@ const ReportsView = () => {
             startDate,
             endDate,
             groupBy: 'property',
-            propertyName: selectedProperty
+            propertyName: selectedProperty,
+            filter
           });
 
           setChartData({
             type: 'pie',
-            title: `Tasks by ${selectedProperty}`,
+            title: `Tasks by ${selectedProperty}` + (filter ? ' (Filtered)' : ''),
             data: result.data.map(item => ({
               label: item.groupName,
               value: item.totalTasks
@@ -115,7 +152,7 @@ const ReportsView = () => {
             break;
           }
 
-          const result = await api.getPropertyDistribution(user.id, selectedProperty);
+          const result = await api.getPropertyDistribution(user.id, selectedProperty, filter);
 
           setChartData({
             type: 'bar',
@@ -131,12 +168,13 @@ const ReportsView = () => {
         case 'timeline': {
           const result = await api.getTimelineAnalytics(user.id, {
             startDate,
-            endDate
+            endDate,
+            filter
           });
 
           setChartData({
             type: 'timeline',
-            title: 'Task Activity Timeline',
+            title: 'Task Activity Timeline' + (filter ? ' (Filtered)' : ''),
             data: result.data
           });
           break;
@@ -145,12 +183,13 @@ const ReportsView = () => {
         case 'inactive-projects': {
           const result = await api.getInactiveProjects(user.id, {
             daysSinceUpdate: inactivityDays,
-            minSubtasks: 2
+            minSubtasks: 2,
+            filter
           });
 
           setChartData({
             type: 'list',
-            title: `Projects Inactive for ${inactivityDays}+ Days`,
+            title: `Projects Inactive for ${inactivityDays}+ Days` + (filter ? ' (Filtered)' : ''),
             data: result.data
           });
           break;
@@ -310,6 +349,82 @@ const ReportsView = () => {
               max="365"
               className="report-input"
             />
+          </div>
+        )}
+      </div>
+
+      {/* Filter Section */}
+      <div className="filter-section">
+        <div className="filter-header">
+          <h3>Filter Tasks</h3>
+          <div className="filter-mode-selector">
+            <button
+              className={`filter-mode-btn ${filterMode === 'none' ? 'active' : ''}`}
+              onClick={() => setFilterMode('none')}
+            >
+              No Filter
+            </button>
+            <button
+              className={`filter-mode-btn ${filterMode === 'natural' ? 'active' : ''}`}
+              onClick={() => setFilterMode('natural')}
+            >
+              Natural Language
+            </button>
+            <button
+              className={`filter-mode-btn ${filterMode === 'expression' ? 'active' : ''}`}
+              onClick={() => setFilterMode('expression')}
+            >
+              Expression
+            </button>
+          </div>
+        </div>
+
+        {filterMode === 'natural' && (
+          <div className="filter-input-section">
+            <input
+              type="text"
+              value={naturalLanguageFilter}
+              onChange={(e) => setNaturalLanguageFilter(e.target.value)}
+              placeholder="e.g., high priority tasks that aren't done"
+              className="filter-input"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  convertNaturalLanguageToExpression();
+                }
+              }}
+            />
+            <button
+              onClick={convertNaturalLanguageToExpression}
+              disabled={convertingFilter || !naturalLanguageFilter.trim()}
+              className="convert-filter-btn"
+            >
+              {convertingFilter ? 'Converting...' : 'Convert'}
+            </button>
+          </div>
+        )}
+
+        {filterMode === 'expression' && (
+          <div className="filter-input-section">
+            <input
+              type="text"
+              value={filterExpression}
+              onChange={(e) => setFilterExpression(e.target.value)}
+              placeholder="e.g., priority = high AND done = false"
+              className="filter-input"
+            />
+            <button
+              onClick={clearFilter}
+              className="clear-filter-btn"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {filterExpression && filterMode !== 'none' && (
+          <div className="active-filter-display">
+            <span className="filter-label">Active Filter:</span>
+            <code className="filter-code">{filterExpression}</code>
           </div>
         )}
       </div>

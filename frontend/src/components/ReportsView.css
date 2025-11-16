@@ -120,3 +120,136 @@
   color: #ff9800;
   font-weight: 600;
 }
+
+/* Filter Section */
+.filter-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filter-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.filter-mode-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-mode-btn {
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.filter-mode-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.filter-mode-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.filter-input-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filter-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.convert-filter-btn,
+.clear-filter-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.convert-filter-btn {
+  background: #667eea;
+  color: white;
+}
+
+.convert-filter-btn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.convert-filter-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.clear-filter-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.clear-filter-btn:hover {
+  background: #e0e0e0;
+}
+
+.active-filter-display {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0f4ff;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5568d3;
+}
+
+.filter-code {
+  flex: 1;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #333;
+}

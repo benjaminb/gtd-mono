@@ -210,13 +210,14 @@ class ApiService {
 
   // Analytics endpoints
   async getCompletionAnalytics(userId, options = {}) {
-    const { startDate, endDate, groupBy, propertyName } = options;
+    const { startDate, endDate, groupBy, propertyName, filter } = options;
     const params = new URLSearchParams({ userId });
 
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     if (groupBy) params.append('groupBy', groupBy);
     if (propertyName) params.append('propertyName', propertyName);
+    if (filter) params.append('filter', filter);
 
     const response = await fetch(`${API_BASE}/analytics/completion?${params}`);
     if (!response.ok) throw new Error('Failed to fetch completion analytics');
@@ -224,12 +225,14 @@ class ApiService {
   }
 
   async getInactiveProjects(userId, options = {}) {
-    const { daysSinceUpdate = 30, minSubtasks = 2 } = options;
+    const { daysSinceUpdate = 30, minSubtasks = 2, filter } = options;
     const params = new URLSearchParams({
       userId,
       daysSinceUpdate: daysSinceUpdate.toString(),
       minSubtasks: minSubtasks.toString()
     });
+
+    if (filter) params.append('filter', filter);
 
     const response = await fetch(`${API_BASE}/analytics/inactive-projects?${params}`);
     if (!response.ok) throw new Error('Failed to fetch inactive projects');
@@ -237,19 +240,22 @@ class ApiService {
   }
 
   async getTimelineAnalytics(userId, options = {}) {
-    const { startDate, endDate } = options;
+    const { startDate, endDate, filter } = options;
     const params = new URLSearchParams({ userId });
 
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
+    if (filter) params.append('filter', filter);
 
     const response = await fetch(`${API_BASE}/analytics/timeline?${params}`);
     if (!response.ok) throw new Error('Failed to fetch timeline analytics');
     return response.json();
   }
 
-  async getPropertyDistribution(userId, propertyName) {
+  async getPropertyDistribution(userId, propertyName, filter = null) {
     const params = new URLSearchParams({ userId, propertyName });
+
+    if (filter) params.append('filter', filter);
 
     const response = await fetch(`${API_BASE}/analytics/property-distribution?${params}`);
     if (!response.ok) throw new Error('Failed to fetch property distribution');

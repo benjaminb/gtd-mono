@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 const driver = require('../utils/database');
+const { filterTasksByExpression } = require('../utils/expressionParser');
 
 /**
  * Get task completion analytics
@@ -11,102 +12,140 @@ const driver = require('../utils/database');
  * - endDate: optional ISO date string
  * - groupBy: 'parent' | 'property' | 'none'
  * - propertyName: required if groupBy=property
+ * - filter: optional boolean expression to filter tasks
  */
 router.get('/completion', async (req, res) => {
   try {
-    const { userId, startDate, endDate, groupBy, propertyName } = req.query;
+    const { userId, startDate, endDate, groupBy, propertyName, filter } = req.query;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    const session = driver.session();
+    // Get all user tasks
+    let tasks = await Task.findByUserId(userId);
 
-    try {
-      let query;
-      let params = { userId };
-
-      // Build time filter
-      let timeFilter = '';
-      if (startDate) {
-        timeFilter += ' AND t.createdAt >= $startDate';
-        params.startDate = startDate;
-      }
-      if (endDate) {
-        timeFilter += ' AND t.createdAt <= $endDate';
-        params.endDate = endDate;
-      }
-
-      if (groupBy === 'parent') {
-        // Group by parent task
-        query = `
-          MATCH (u:User {id: $userId})-[:OWNS]->(t:Task)
-          WHERE 1=1 ${timeFilter}
-          OPTIONAL MATCH (parent:Task)-[:HAS_SUBTASK]->(t)
-          WITH
-            COALESCE(parent.name, 'No Parent') as parentName,
-            COALESCE(parent.id, 'none') as parentId,
-            COUNT(t) as totalTasks,
-            SUM(CASE WHEN t.done = true THEN 1 ELSE 0 END) as completedTasks
-          RETURN
-            parentName,
-            parentId,
-            totalTasks,
-            completedTasks,
-            toFloat(completedTasks) / totalTasks as completionRate
-          ORDER BY totalTasks DESC
-        `;
-      } else if (groupBy === 'property' && propertyName) {
-        // Group by custom property value
-        params.propertyName = propertyName;
-        query = `
-          MATCH (u:User {id: $userId})-[:OWNS]->(t:Task)
-          WHERE 1=1 ${timeFilter}
-          AND t.customProperties IS NOT NULL
-          WITH t,
-            CASE
-              WHEN t.customProperties CONTAINS $propertyName
-              THEN apoc.convert.fromJsonMap(t.customProperties)[$propertyName]
-              ELSE 'Not Set'
-            END as propValue
-          WITH
-            toString(propValue) as groupName,
-            COUNT(t) as totalTasks,
-            SUM(CASE WHEN t.done = true THEN 1 ELSE 0 END) as completedTasks
-          RETURN
-            groupName,
-            totalTasks,
-            completedTasks,
-            toFloat(completedTasks) / totalTasks as completionRate
-          ORDER BY totalTasks DESC
-        `;
-      } else {
-        // No grouping - overall stats
-        query = `
-          MATCH (u:User {id: $userId})-[:OWNS]->(t:Task)
-          WHERE 1=1 ${timeFilter}
-          RETURN
-            'All Tasks' as groupName,
-            COUNT(t) as totalTasks,
-            SUM(CASE WHEN t.done = true THEN 1 ELSE 0 END) as completedTasks,
-            toFloat(SUM(CASE WHEN t.done = true THEN 1 ELSE 0 END)) / COUNT(t) as completionRate
-        `;
-      }
-
-      const result = await session.run(query, params);
-
-      const data = result.records.map(record => {
-        const obj = {};
-        record.keys.forEach(key => {
-          obj[key] = record.get(key);
-        });
-        return obj;
+    // Apply time filtering
+    if (startDate) {
+      const startDateTime = new Date(startDate).getTime();
+      tasks = tasks.filter(t => {
+        const taskTime = new Date(t.createdAt).getTime();
+        return taskTime >= startDateTime;
       });
-
-      res.json({ data, groupBy: groupBy || 'none' });
-    } finally {
-      await session.close();
     }
+    if (endDate) {
+      const endDateTime = new Date(endDate).getTime();
+      tasks = tasks.filter(t => {
+        const taskTime = new Date(t.createdAt).getTime();
+        return taskTime <= endDateTime;
+      });
+    }
+
+    // Apply expression filter if provided
+    if (filter && filter.trim()) {
+      try {
+        tasks = filterTasksByExpression(tasks, filter);
+      } catch (err) {
+        return res.status(400).json({
+          error: 'Invalid filter expression',
+          details: err.message
+        });
+      }
+    }
+
+    // Now aggregate based on groupBy
+    let data = [];
+
+    if (groupBy === 'parent') {
+      // Group by parent task - need to fetch parent relationships
+      const groupMap = new Map();
+
+      for (const task of tasks) {
+        const parents = await Task.getParents(task.id);
+        const parentKey = parents.length > 0 ? parents[0].id : 'none';
+        const parentName = parents.length > 0 ? parents[0].name : 'No Parent';
+
+        if (!groupMap.has(parentKey)) {
+          groupMap.set(parentKey, {
+            parentName,
+            parentId: parentKey,
+            totalTasks: 0,
+            completedTasks: 0
+          });
+        }
+
+        const group = groupMap.get(parentKey);
+        group.totalTasks++;
+        if (task.done) {
+          group.completedTasks++;
+        }
+      }
+
+      data = Array.from(groupMap.values()).map(group => ({
+        ...group,
+        completionRate: group.totalTasks > 0 ? group.completedTasks / group.totalTasks : 0
+      }));
+
+      data.sort((a, b) => b.totalTasks - a.totalTasks);
+
+    } else if (groupBy === 'property' && propertyName) {
+      // Group by custom property value
+      const groupMap = new Map();
+
+      for (const task of tasks) {
+        let propValue = 'Not Set';
+
+        if (task.customProperties) {
+          const props = typeof task.customProperties === 'string'
+            ? JSON.parse(task.customProperties)
+            : task.customProperties;
+
+          if (props[propertyName] !== undefined) {
+            propValue = String(props[propertyName]);
+          }
+        }
+
+        if (!groupMap.has(propValue)) {
+          groupMap.set(propValue, {
+            groupName: propValue,
+            totalTasks: 0,
+            completedTasks: 0
+          });
+        }
+
+        const group = groupMap.get(propValue);
+        group.totalTasks++;
+        if (task.done) {
+          group.completedTasks++;
+        }
+      }
+
+      data = Array.from(groupMap.values()).map(group => ({
+        ...group,
+        completionRate: group.totalTasks > 0 ? group.completedTasks / group.totalTasks : 0
+      }));
+
+      data.sort((a, b) => b.totalTasks - a.totalTasks);
+
+    } else {
+      // No grouping - overall stats
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(t => t.done).length;
+
+      data = [{
+        groupName: 'All Tasks',
+        totalTasks,
+        completedTasks,
+        completionRate: totalTasks > 0 ? completedTasks / totalTasks : 0
+      }];
+    }
+
+    res.json({
+      data,
+      groupBy: groupBy || 'none',
+      filtered: !!filter,
+      totalTasksBeforeFilter: filter ? (await Task.findByUserId(userId)).length : tasks.length
+    });
   } catch (error) {
     console.error('Error getting completion analytics:', error);
     res.status(500).json({ error: 'Failed to get analytics' });
@@ -119,72 +158,89 @@ router.get('/completion', async (req, res) => {
  * - userId: required
  * - daysSinceUpdate: number of days (default 30)
  * - minSubtasks: minimum number of subtasks to be considered a project (default 2)
+ * - filter: optional boolean expression to filter projects
  */
 router.get('/inactive-projects', async (req, res) => {
   try {
-    const { userId, daysSinceUpdate = 30, minSubtasks = 2 } = req.query;
+    const { userId, daysSinceUpdate = 30, minSubtasks = 2, filter } = req.query;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    const session = driver.session();
+    // Get all user tasks
+    let allTasks = await Task.findByUserId(userId);
 
-    try {
-      // Calculate cutoff date
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - parseInt(daysSinceUpdate));
-      const cutoffISO = cutoffDate.toISOString();
-
-      const query = `
-        MATCH (u:User {id: $userId})-[:OWNS]->(project:Task)
-        WHERE (project)-[:HAS_SUBTASK]->(:Task)
-        WITH project,
-          SIZE((project)-[:HAS_SUBTASK]->(:Task)) as subtaskCount
-        WHERE subtaskCount >= $minSubtasks
-
-        OPTIONAL MATCH (project)-[:HAS_SUBTASK*]->(descendant:Task)
-        WITH project, subtaskCount,
-          MAX(COALESCE(descendant.updatedAt, descendant.createdAt)) as lastActivity
-
-        WHERE lastActivity < $cutoffDate OR lastActivity IS NULL
-
-        RETURN
-          project.id as projectId,
-          project.name as projectName,
-          subtaskCount,
-          lastActivity,
-          duration.between(
-            datetime(lastActivity),
-            datetime()
-          ).days as daysSinceActivity
-        ORDER BY daysSinceActivity DESC
-      `;
-
-      const result = await session.run(query, {
-        userId,
-        minSubtasks: parseInt(minSubtasks),
-        cutoffDate: cutoffISO
-      });
-
-      const data = result.records.map(record => ({
-        projectId: record.get('projectId'),
-        projectName: record.get('projectName'),
-        subtaskCount: record.get('subtaskCount').toNumber(),
-        lastActivity: record.get('lastActivity'),
-        daysSinceActivity: record.get('daysSinceActivity')
-          ? record.get('daysSinceActivity').toNumber()
-          : null
-      }));
-
-      res.json({
-        data,
-        cutoffDays: parseInt(daysSinceUpdate),
-        minSubtasks: parseInt(minSubtasks)
-      });
-    } finally {
-      await session.close();
+    // Apply expression filter if provided
+    if (filter && filter.trim()) {
+      try {
+        allTasks = filterTasksByExpression(allTasks, filter);
+      } catch (err) {
+        return res.status(400).json({
+          error: 'Invalid filter expression',
+          details: err.message
+        });
+      }
     }
+
+    // Find tasks that are projects (have subtasks)
+    const data = [];
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(daysSinceUpdate));
+    const cutoffTime = cutoffDate.getTime();
+
+    for (const task of allTasks) {
+      const subtasks = await Task.getSubtasks(task.id);
+
+      if (subtasks.length < parseInt(minSubtasks)) {
+        continue; // Not a project
+      }
+
+      // Get all descendants to find last activity
+      const hierarchy = await Task.getHierarchy(task.id, 10);
+      let lastActivity = null;
+
+      const checkActivity = (node) => {
+        const nodeTime = new Date(node.updatedAt || node.createdAt).getTime();
+        if (!lastActivity || nodeTime > lastActivity) {
+          lastActivity = nodeTime;
+        }
+        if (node.subtasks) {
+          node.subtasks.forEach(checkActivity);
+        }
+      };
+
+      checkActivity(hierarchy);
+
+      // Check if inactive
+      if (!lastActivity || lastActivity < cutoffTime) {
+        const daysSinceActivity = lastActivity
+          ? Math.floor((Date.now() - lastActivity) / (1000 * 60 * 60 * 24))
+          : null;
+
+        data.push({
+          projectId: task.id,
+          projectName: task.name,
+          subtaskCount: subtasks.length,
+          lastActivity: lastActivity ? new Date(lastActivity).toISOString() : null,
+          daysSinceActivity
+        });
+      }
+    }
+
+    // Sort by days since activity
+    data.sort((a, b) => {
+      if (a.daysSinceActivity === null) return -1;
+      if (b.daysSinceActivity === null) return 1;
+      return b.daysSinceActivity - a.daysSinceActivity;
+    });
+
+    res.json({
+      data,
+      cutoffDays: parseInt(daysSinceUpdate),
+      minSubtasks: parseInt(minSubtasks),
+      filtered: !!filter
+    });
   } catch (error) {
     console.error('Error getting inactive projects:', error);
     res.status(500).json({ error: 'Failed to get inactive projects' });
@@ -198,55 +254,72 @@ router.get('/inactive-projects', async (req, res) => {
  * - userId: required
  * - startDate: optional ISO date string
  * - endDate: optional ISO date string
+ * - filter: optional boolean expression to filter tasks
  */
 router.get('/timeline', async (req, res) => {
   try {
-    const { userId, startDate, endDate } = req.query;
+    const { userId, startDate, endDate, filter } = req.query;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    const session = driver.session();
+    // Get all user tasks
+    let tasks = await Task.findByUserId(userId);
 
-    try {
-      let params = { userId };
-      let timeFilter = '';
-
-      if (startDate) {
-        timeFilter += ' AND t.createdAt >= $startDate';
-        params.startDate = startDate;
-      }
-      if (endDate) {
-        timeFilter += ' AND t.createdAt <= $endDate';
-        params.endDate = endDate;
-      }
-
-      const query = `
-        MATCH (u:User {id: $userId})-[:OWNS]->(t:Task)
-        WHERE 1=1 ${timeFilter}
-        WITH
-          date(datetime(t.createdAt)) as day,
-          t.done as done
-        RETURN
-          toString(day) as date,
-          COUNT(CASE WHEN done = false THEN 1 END) as tasksCreated,
-          COUNT(CASE WHEN done = true THEN 1 END) as tasksCompleted
-        ORDER BY day ASC
-      `;
-
-      const result = await session.run(query, params);
-
-      const data = result.records.map(record => ({
-        date: record.get('date'),
-        tasksCreated: record.get('tasksCreated').toNumber(),
-        tasksCompleted: record.get('tasksCompleted').toNumber()
-      }));
-
-      res.json({ data });
-    } finally {
-      await session.close();
+    // Apply time filtering
+    if (startDate) {
+      const startDateTime = new Date(startDate).getTime();
+      tasks = tasks.filter(t => {
+        const taskTime = new Date(t.createdAt).getTime();
+        return taskTime >= startDateTime;
+      });
     }
+    if (endDate) {
+      const endDateTime = new Date(endDate).getTime();
+      tasks = tasks.filter(t => {
+        const taskTime = new Date(t.createdAt).getTime();
+        return taskTime <= endDateTime;
+      });
+    }
+
+    // Apply expression filter if provided
+    if (filter && filter.trim()) {
+      try {
+        tasks = filterTasksByExpression(tasks, filter);
+      } catch (err) {
+        return res.status(400).json({
+          error: 'Invalid filter expression',
+          details: err.message
+        });
+      }
+    }
+
+    // Group by day
+    const dayMap = new Map();
+
+    tasks.forEach(task => {
+      const date = new Date(task.createdAt).toISOString().split('T')[0];
+
+      if (!dayMap.has(date)) {
+        dayMap.set(date, {
+          date,
+          tasksCreated: 0,
+          tasksCompleted: 0
+        });
+      }
+
+      const dayData = dayMap.get(date);
+      if (task.done) {
+        dayData.tasksCompleted++;
+      } else {
+        dayData.tasksCreated++;
+      }
+    });
+
+    const data = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({ data, filtered: !!filter });
   } catch (error) {
     console.error('Error getting timeline analytics:', error);
     res.status(500).json({ error: 'Failed to get timeline' });
@@ -258,46 +331,69 @@ router.get('/timeline', async (req, res) => {
  * Query params:
  * - userId: required
  * - propertyName: required
+ * - filter: optional boolean expression to filter tasks
  */
 router.get('/property-distribution', async (req, res) => {
   try {
-    const { userId, propertyName } = req.query;
+    const { userId, propertyName, filter } = req.query;
 
     if (!userId || !propertyName) {
       return res.status(400).json({ error: 'userId and propertyName are required' });
     }
 
-    const session = driver.session();
+    // Get all user tasks
+    let tasks = await Task.findByUserId(userId);
 
-    try {
-      const query = `
-        MATCH (u:User {id: $userId})-[:OWNS]->(t:Task)
-        WHERE t.customProperties IS NOT NULL
-        AND t.customProperties CONTAINS $propertyName
-        WITH t,
-          apoc.convert.fromJsonMap(t.customProperties)[$propertyName] as propValue
-        RETURN
-          toString(propValue) as value,
-          COUNT(t) as count,
-          SUM(CASE WHEN t.done = true THEN 1 ELSE 0 END) as completedCount
-        ORDER BY count DESC
-      `;
-
-      const result = await session.run(query, { userId, propertyName });
-
-      const data = result.records.map(record => ({
-        value: record.get('value'),
-        count: record.get('count').toNumber(),
-        completedCount: record.get('completedCount').toNumber()
-      }));
-
-      res.json({
-        data,
-        propertyName
-      });
-    } finally {
-      await session.close();
+    // Apply expression filter if provided
+    if (filter && filter.trim()) {
+      try {
+        tasks = filterTasksByExpression(tasks, filter);
+      } catch (err) {
+        return res.status(400).json({
+          error: 'Invalid filter expression',
+          details: err.message
+        });
+      }
     }
+
+    // Group by property value
+    const valueMap = new Map();
+
+    tasks.forEach(task => {
+      let propValue = 'Not Set';
+
+      if (task.customProperties) {
+        const props = typeof task.customProperties === 'string'
+          ? JSON.parse(task.customProperties)
+          : task.customProperties;
+
+        if (props[propertyName] !== undefined) {
+          propValue = String(props[propertyName]);
+        }
+      }
+
+      if (!valueMap.has(propValue)) {
+        valueMap.set(propValue, {
+          value: propValue,
+          count: 0,
+          completedCount: 0
+        });
+      }
+
+      const valueData = valueMap.get(propValue);
+      valueData.count++;
+      if (task.done) {
+        valueData.completedCount++;
+      }
+    });
+
+    const data = Array.from(valueMap.values()).sort((a, b) => b.count - a.count);
+
+    res.json({
+      data,
+      propertyName,
+      filtered: !!filter
+    });
   } catch (error) {
     console.error('Error getting property distribution:', error);
     res.status(500).json({ error: 'Failed to get property distribution' });
