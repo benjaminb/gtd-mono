@@ -4,9 +4,10 @@ import { useAutoSuggestions } from '../hooks/useAutoSuggestions';
 import './TaskNode.css';
 
 const TaskNode = ({ task, onEdit, onAddSubtask }) => {
-  const { getChildren, updateTask, deleteTask, matchesFilters, filters, acceptSuggestion, rejectSuggestion } = useTask();
+  const { getChildren, updateTask, deleteTask, matchesFilters, filters, acceptSuggestion, rejectSuggestion, activeTimeTracking, toggleTimeTracking } = useTask();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const children = getChildren(task.id);
   const hasChildren = children.length > 0;
 
@@ -93,10 +94,36 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
   const isAiSuggested = source === 'ai-suggested';
   const isAiAccepted = source === 'ai-accepted';
 
+  // Time tracking info
+  const isTracking = activeTimeTracking === task.id;
+  const timeTracking = task.timeTracking || { totalSeconds: 0, currentSessionStart: null };
+  let totalSeconds = timeTracking.totalSeconds || 0;
+  if (timeTracking.currentSessionStart) {
+    const startTime = new Date(timeTracking.currentSessionStart);
+    const now = new Date();
+    totalSeconds += Math.floor((now - startTime) / 1000);
+  }
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const hasTimeTracked = totalSeconds > 0;
+
+  // Get top 3 properties for quick preview
+  const topProps = Object.entries(customProps).slice(0, 3);
+
+  // Calculate completion if has children
+  const completionPercent = hasChildren
+    ? Math.round((children.filter(c => c.done).length / children.length) * 100)
+    : null;
+
   return (
-    <div className={`task-node ${isAiSuggested ? 'ai-suggested' : ''} ${isAiAccepted ? 'ai-accepted' : ''}`}>
+    <div
+      className={`task-node ${isAiSuggested ? 'ai-suggested' : ''} ${isAiAccepted ? 'ai-accepted' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div
-        className={`task-header ${hasActiveFilters && directMatch ? 'filter-match' : ''}`}
+        className={`task-header ${hasActiveFilters && directMatch ? 'filter-match' : ''} ${isHovered ? 'hovered' : ''}`}
         onClick={toggleDetails}
       >
         <span className="task-expand-icon" onClick={toggleExpanded}>
@@ -121,10 +148,34 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
           {task.name}
         </span>
 
-        {isAiSuggested && <span className="ai-badge ai-suggested-badge" title="AI Suggested">AI</span>}
-        {isAiAccepted && <span className="ai-badge ai-accepted-badge" title="AI Accepted">✓ AI</span>}
+        {/* Quick info badges on hover */}
+        {isHovered && (
+          <div className="task-quick-info">
+            {completionPercent !== null && (
+              <span className="quick-info-badge" title={`${completionPercent}% complete`}>
+                {completionPercent}%
+              </span>
+            )}
+            {hasTimeTracked && (
+              <span className={`quick-info-badge time-badge ${isTracking ? 'tracking' : ''}`} title="Time spent">
+                {isTracking && '⏱ '}{timeDisplay}
+              </span>
+            )}
+            {topProps.map(([key, value]) => (
+              <span key={key} className="quick-info-badge prop-badge" title={`${key}: ${value}`}>
+                {key}: {String(value).substring(0, 15)}{String(value).length > 15 ? '...' : ''}
+              </span>
+            ))}
+          </div>
+        )}
 
-        {hasCustomProps && <span className="has-props-indicator">●</span>}
+        {!isHovered && (
+          <>
+            {isAiSuggested && <span className="ai-badge ai-suggested-badge" title="AI Suggested">AI</span>}
+            {isAiAccepted && <span className="ai-badge ai-accepted-badge" title="AI Accepted">✓ AI</span>}
+            {hasCustomProps && <span className="has-props-indicator">●</span>}
+          </>
+        )}
 
         <div className="task-actions">
           {isAiSuggested ? (
@@ -134,6 +185,18 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
             </>
           ) : (
             <>
+              {isHovered && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await toggleTimeTracking(task.id);
+                  }}
+                  title={isTracking ? "Stop tracking" : "Start tracking"}
+                  className={`time-track-btn ${isTracking ? 'tracking' : ''}`}
+                >
+                  {isTracking ? '⏸' : '▶'}
+                </button>
+              )}
               <button onClick={handleAddSubtask} title="Add subtask">+</button>
               <button onClick={handleEdit} title="Edit">✎</button>
               <button onClick={handleDelete} title="Delete">×</button>

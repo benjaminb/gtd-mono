@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTask } from '../context/TaskContext';
 import { useAutoSuggestions } from '../hooks/useAutoSuggestions';
+import TaskHoverCard from './TaskHoverCard';
 import './GraphView.css';
 
 const GraphView = ({ onEditTask, onAddSubtask }) => {
-  const { tasks, getRootTasks, getChildren, activeTimeTracking, toggleTimeTracking, updateTask } = useTask();
+  const { tasks, getRootTasks, getChildren, activeTimeTracking, toggleTimeTracking, updateTask, deleteTask } = useTask();
   const [selectedTask, setSelectedTask] = useState(null);
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [hoverCardNode, setHoverCardNode] = useState(null);
+  const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const svgRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
 
   // Auto-generate subtask suggestions when user selects a task
   const isUserTask = selectedTask && (selectedTask.source === 'user' || selectedTask.source === 'ai-accepted');
@@ -101,6 +105,36 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
 
   const handleCloseDetails = () => {
     setSelectedTask(null);
+  };
+
+  const handleRectangleHover = (node, event) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    // Set a timeout to show hover card after 800ms
+    hoverTimeoutRef.current = setTimeout(() => {
+      // Get mouse position relative to viewport
+      const svgRect = svgRef.current.getBoundingClientRect();
+      setHoverCardPosition({
+        x: event.clientX + 10,
+        y: event.clientY + 10
+      });
+      setHoverCardNode(node);
+    }, 800);
+  };
+
+  const handleRectangleLeave = () => {
+    // Clear timeout if user moves away before card shows
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleCloseHoverCard = () => {
+    setHoverCardNode(null);
   };
 
   const handlePropertyChange = (key, value) => {
@@ -234,6 +268,8 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
                 strokeDasharray={strokeDasharray}
                 rx="4"
                 onClick={() => handleNodeClick(node)}
+                onMouseEnter={(e) => handleRectangleHover(node, e)}
+                onMouseLeave={handleRectangleLeave}
               />
 
               {/* Circle (bulb of thermometer) - main task indicator */}
@@ -415,6 +451,17 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
           onClose={handleCloseDetails}
           onEdit={onEditTask}
           onAddSubtask={onAddSubtask}
+        />
+      )}
+
+      {hoverCardNode && (
+        <TaskHoverCard
+          task={hoverCardNode.task}
+          position={hoverCardPosition}
+          onEdit={onEditTask}
+          onDelete={deleteTask}
+          onAddSubtask={onAddSubtask}
+          onClose={handleCloseHoverCard}
         />
       )}
     </div>

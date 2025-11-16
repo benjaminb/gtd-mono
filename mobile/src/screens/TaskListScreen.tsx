@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { useTask } from '@gtd/core';
 import { TaskCard } from '../components/TaskCard';
+import { TaskBottomSheet } from '../components/TaskBottomSheet';
 
 export const TaskListScreen: React.FC = () => {
   const {
@@ -26,6 +30,8 @@ export const TaskListScreen: React.FC = () => {
   } = useTask();
 
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Toggle task expansion to show/hide subtasks
   const toggleExpand = (taskId: string) => {
@@ -60,6 +66,43 @@ export const TaskListScreen: React.FC = () => {
 
   const flattenedTasks = flattenTasks();
 
+  const handleTaskLongPress = (task: any) => {
+    setSelectedTask(task);
+    bottomSheetRef.current?.snapToIndex(0);
+  };
+
+  const handleCloseBottomSheet = () => {
+    bottomSheetRef.current?.close();
+    setSelectedTask(null);
+  };
+
+  const handleDeleteTask = async () => {
+    if (selectedTask) {
+      Alert.alert(
+        'Delete Task',
+        `Are you sure you want to delete "${selectedTask.name}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              await deleteTask(selectedTask.id);
+              handleCloseBottomSheet();
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  // Calculate completion for selected task
+  const selectedTaskChildren = selectedTask ? getChildren(selectedTask.id) : [];
+  const selectedTaskCompletionPercent =
+    selectedTaskChildren.length > 0
+      ? Math.round((selectedTaskChildren.filter((c: any) => c.done).length / selectedTaskChildren.length) * 100)
+      : 0;
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -78,7 +121,7 @@ export const TaskListScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       {/* Search/Filter Bar */}
       <View style={styles.searchBar}>
         <TextInput
@@ -114,6 +157,7 @@ export const TaskListScreen: React.FC = () => {
                 <TaskCard
                   task={task}
                   onPress={() => hasChildren && toggleExpand(task.id)}
+                  onLongPress={() => handleTaskLongPress(task)}
                   onToggleDone={async () => {
                     await updateTask(task.id, { done: !task.done });
                   }}
@@ -136,7 +180,33 @@ export const TaskListScreen: React.FC = () => {
         }
         contentContainerStyle={flattenedTasks.length === 0 ? styles.emptyList : undefined}
       />
-    </View>
+
+      {/* Bottom Sheet for Task Details */}
+      <TaskBottomSheet
+        ref={bottomSheetRef}
+        task={selectedTask}
+        onEdit={() => {
+          // TODO: Navigate to edit screen
+          console.log('Edit task:', selectedTask?.name);
+          handleCloseBottomSheet();
+        }}
+        onDelete={handleDeleteTask}
+        onAddSubtask={() => {
+          // TODO: Navigate to add subtask screen
+          console.log('Add subtask to:', selectedTask?.name);
+          handleCloseBottomSheet();
+        }}
+        onClose={handleCloseBottomSheet}
+        isTracking={activeTimeTracking === selectedTask?.id}
+        onToggleTracking={async () => {
+          if (selectedTask) {
+            await toggleTimeTracking(selectedTask.id);
+          }
+        }}
+        childCount={selectedTaskChildren.length}
+        completionPercent={selectedTaskCompletionPercent}
+      />
+    </GestureHandlerRootView>
   );
 };
 

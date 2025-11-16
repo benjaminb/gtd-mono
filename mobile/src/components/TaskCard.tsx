@@ -6,6 +6,7 @@ import { Task, formatDuration, calculateTotalSeconds } from '@gtd/core';
 interface TaskCardProps {
   task: Task;
   onPress: () => void;
+  onLongPress?: () => void;
   onToggleDone: () => void;
   onToggleTimeTracking: () => void;
   isTracking: boolean;
@@ -14,6 +15,7 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onPress,
+  onLongPress,
   onToggleDone,
   onToggleTimeTracking,
   isTracking,
@@ -28,6 +30,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     onToggleTimeTracking();
   };
 
+  const handleLongPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onLongPress?.();
+  };
+
   const totalSeconds = calculateTotalSeconds(task.timeTracking);
   const timeDisplay = totalSeconds > 0 ? formatDuration(totalSeconds) : null;
 
@@ -38,6 +45,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     <TouchableOpacity
       style={[styles.card, task.done && styles.cardDone]}
       onPress={onPress}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
       activeOpacity={0.7}
     >
       <View style={styles.leftSection}>
