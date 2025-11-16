@@ -243,6 +243,63 @@ router.delete('/:id/reject-suggestion', async (req, res) => {
 });
 
 /**
+ * POST /api/tasks/:id/time-tracking/start
+ * Start time tracking for a task
+ */
+router.post('/:id/time-tracking/start', async (req, res) => {
+  try {
+    const task = await Task.startTimeTracking(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error('Error starting time tracking:', error);
+    res.status(500).json({ error: 'Failed to start time tracking' });
+  }
+});
+
+/**
+ * POST /api/tasks/:id/time-tracking/stop
+ * Stop time tracking for a task
+ */
+router.post('/:id/time-tracking/stop', async (req, res) => {
+  try {
+    const task = await Task.stopTimeTracking(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error('Error stopping time tracking:', error);
+    res.status(500).json({ error: 'Failed to stop time tracking' });
+  }
+});
+
+/**
+ * GET /api/tasks/:id/time-tracking/summary
+ * Get time tracking summary for a task
+ */
+router.get('/:id/time-tracking/summary', async (req, res) => {
+  try {
+    const summary = await Task.getTimeTrackingSummary(req.params.id);
+
+    if (!summary) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    res.json(summary);
+  } catch (error) {
+    console.error('Error getting time tracking summary:', error);
+    res.status(500).json({ error: 'Failed to get time tracking summary' });
+  }
+});
+
+/**
  * POST /api/tasks/search
  * Search/filter tasks by boolean expression
  * Body: { userId, expression }

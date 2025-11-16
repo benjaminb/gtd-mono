@@ -118,6 +118,29 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to reject suggestion');
   }
 
+  // Time tracking endpoints
+  async startTimeTracking(taskId) {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/time-tracking/start`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to start time tracking');
+    return response.json();
+  }
+
+  async stopTimeTracking(taskId) {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/time-tracking/stop`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to stop time tracking');
+    return response.json();
+  }
+
+  async getTimeTrackingSummary(taskId) {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/time-tracking/summary`);
+    if (!response.ok) throw new Error('Failed to get time tracking summary');
+    return response.json();
+  }
+
   // Suggestion endpoints
   async getSuggestionsSubtasks(taskId, userId) {
     const response = await fetch(`${API_BASE}/suggestions/subtasks`, {

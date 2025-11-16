@@ -59,9 +59,10 @@ class Task {
    * @param {string} [taskData.source='user'] - Source: 'user', 'ai-suggested', 'ai-accepted'
    * @param {Object} [taskData.suggestionMetadata] - Metadata for AI suggestions
    * @param {Object} [taskData.customProperties={}] - Custom user-defined properties
+   * @param {Object} [taskData.timeTracking] - Time tracking data
    * @returns {Promise<Object>} Created task
    */
-  static async create({ userId, name, done = false, emoji = null, source = 'user', suggestionMetadata = null, customProperties = {} }) {
+  static async create({ userId, name, done = false, emoji = null, source = 'user', suggestionMetadata = null, customProperties = {}, timeTracking = null }) {
     // Validate custom properties against schemas
     const validation = await Task.validateCustomProperties(userId, customProperties);
     if (!validation.valid) {
@@ -74,6 +75,13 @@ class Task {
       const createdAt = new Date().toISOString();
       const updatedAt = createdAt;
 
+      // Initialize default time tracking structure if not provided
+      const defaultTimeTracking = {
+        totalSeconds: 0,
+        sessions: [],
+        currentSessionStart: null
+      };
+
       const result = await session.run(
         `MATCH (u:User {id: $userId})
          CREATE (t:Task {
@@ -83,6 +91,7 @@ class Task {
            emoji: $emoji,
            source: $source,
            suggestionMetadata: $suggestionMetadata,
+           timeTracking: $timeTracking,
            createdAt: $createdAt,
            updatedAt: $updatedAt,
            customProperties: $customProperties
@@ -97,6 +106,7 @@ class Task {
           emoji,
           source,
           suggestionMetadata: suggestionMetadata ? JSON.stringify(suggestionMetadata) : null,
+          timeTracking: JSON.stringify(timeTracking || defaultTimeTracking),
           createdAt,
           updatedAt,
           customProperties: JSON.stringify(validation.normalized)
@@ -106,6 +116,7 @@ class Task {
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
       task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.timeTracking = JSON.parse(task.timeTracking || JSON.stringify(defaultTimeTracking));
       return task;
     } finally {
       await session.close();
@@ -132,6 +143,7 @@ class Task {
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
       task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
       // Ensure source field exists (for backward compatibility)
       task.source = task.source || 'user';
       return task;
@@ -172,7 +184,7 @@ class Task {
 
     const session = driver.session();
     try {
-      const allowedFields = ['name', 'done', 'emoji', 'source', 'suggestionMetadata', 'customProperties'];
+      const allowedFields = ['name', 'done', 'emoji', 'source', 'suggestionMetadata', 'customProperties', 'timeTracking'];
       const setClause = ['t.updatedAt = $updatedAt'];
       const params = {
         id,
@@ -182,7 +194,7 @@ class Task {
       Object.keys(updates).forEach(key => {
         if (allowedFields.includes(key)) {
           setClause.push(`t.${key} = $${key}`);
-          if (key === 'customProperties' || key === 'suggestionMetadata') {
+          if (key === 'customProperties' || key === 'suggestionMetadata' || key === 'timeTracking') {
             params[key] = updates[key] ? JSON.stringify(updates[key]) : null;
           } else {
             params[key] = updates[key];
@@ -204,6 +216,7 @@ class Task {
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
       task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
       task.source = task.source || 'user';
       return task;
     } finally {
@@ -300,6 +313,7 @@ class Task {
         const task = record.get('subtask').properties;
         task.customProperties = JSON.parse(task.customProperties || '{}');
         task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+        task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
         task.source = task.source || 'user';
         return task;
       });
@@ -327,6 +341,7 @@ class Task {
         const task = record.get('parent').properties;
         task.customProperties = JSON.parse(task.customProperties || '{}');
         task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+        task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
         task.source = task.source || 'user';
         return task;
       });
@@ -358,12 +373,14 @@ class Task {
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
       task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
       task.source = task.source || 'user';
 
       const subtasks = result.records[0].get('subtasks').map(node => {
         const t = node.properties;
         t.customProperties = JSON.parse(t.customProperties || '{}');
         t.suggestionMetadata = t.suggestionMetadata ? JSON.parse(t.suggestionMetadata) : null;
+        t.timeTracking = t.timeTracking ? JSON.parse(t.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
         t.source = t.source || 'user';
         return t;
       });
@@ -456,6 +473,7 @@ class Task {
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
       task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.timeTracking = task.timeTracking ? JSON.parse(task.timeTracking) : { totalSeconds: 0, sessions: [], currentSessionStart: null };
       task.source = task.source || 'user';
       return task;
     } finally {
@@ -481,6 +499,98 @@ class Task {
     } finally {
       await session.close();
     }
+  }
+
+  /**
+   * Start time tracking for a task
+   * @param {string} id - Task ID
+   * @returns {Promise<Object|null>} Updated task or null
+   */
+  static async startTimeTracking(id) {
+    const task = await Task.findById(id);
+    if (!task) {
+      return null;
+    }
+
+    const timeTracking = task.timeTracking || { totalSeconds: 0, sessions: [], currentSessionStart: null };
+
+    // If already tracking, don't start again
+    if (timeTracking.currentSessionStart) {
+      return task;
+    }
+
+    // Start new session
+    timeTracking.currentSessionStart = new Date().toISOString();
+
+    return await Task.update(id, { timeTracking });
+  }
+
+  /**
+   * Stop time tracking for a task
+   * @param {string} id - Task ID
+   * @returns {Promise<Object|null>} Updated task or null
+   */
+  static async stopTimeTracking(id) {
+    const task = await Task.findById(id);
+    if (!task) {
+      return null;
+    }
+
+    const timeTracking = task.timeTracking || { totalSeconds: 0, sessions: [], currentSessionStart: null };
+
+    // If not currently tracking, nothing to stop
+    if (!timeTracking.currentSessionStart) {
+      return task;
+    }
+
+    // Calculate session duration
+    const startTime = new Date(timeTracking.currentSessionStart);
+    const endTime = new Date();
+    const durationSeconds = Math.floor((endTime - startTime) / 1000);
+
+    // Add completed session
+    timeTracking.sessions.push({
+      startTime: timeTracking.currentSessionStart,
+      endTime: endTime.toISOString(),
+      durationSeconds: durationSeconds
+    });
+
+    // Update total
+    timeTracking.totalSeconds += durationSeconds;
+
+    // Clear current session
+    timeTracking.currentSessionStart = null;
+
+    return await Task.update(id, { timeTracking });
+  }
+
+  /**
+   * Get time tracking summary for a task
+   * @param {string} id - Task ID
+   * @returns {Promise<Object|null>} Time tracking summary or null
+   */
+  static async getTimeTrackingSummary(id) {
+    const task = await Task.findById(id);
+    if (!task) {
+      return null;
+    }
+
+    const timeTracking = task.timeTracking || { totalSeconds: 0, sessions: [], currentSessionStart: null };
+
+    let currentSessionSeconds = 0;
+    if (timeTracking.currentSessionStart) {
+      const startTime = new Date(timeTracking.currentSessionStart);
+      const now = new Date();
+      currentSessionSeconds = Math.floor((now - startTime) / 1000);
+    }
+
+    return {
+      totalSeconds: timeTracking.totalSeconds + currentSessionSeconds,
+      sessionsCount: timeTracking.sessions.length,
+      isTracking: !!timeTracking.currentSessionStart,
+      currentSessionSeconds: currentSessionSeconds,
+      sessions: timeTracking.sessions
+    };
   }
 }
 

@@ -4,8 +4,9 @@ import { useAutoSuggestions } from '../hooks/useAutoSuggestions';
 import './GraphView.css';
 
 const GraphView = ({ onEditTask, onAddSubtask }) => {
-  const { tasks, getRootTasks, getChildren } = useTask();
+  const { tasks, getRootTasks, getChildren, activeTimeTracking, toggleTimeTracking, updateTask } = useTask();
   const [selectedTask, setSelectedTask] = useState(null);
+  const [hoveredNode, setHoveredNode] = useState(null);
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const svgRef = useRef(null);
 

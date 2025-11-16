@@ -30,6 +30,7 @@ export const TaskProvider = ({ children, userId }) => {
     done: 'all',
     customProperties: {}
   });
+  const [activeTimeTracking, setActiveTimeTracking] = useState(null); // taskId currently being tracked
 
   // Load all tasks on mount
   useEffect(() => {
@@ -525,6 +526,59 @@ export const TaskProvider = ({ children, userId }) => {
     }).slice(0, limit);
   };
 
+  // Start time tracking for a task
+  const startTimeTracking = async (taskId) => {
+    try {
+      // Stop any currently active tracking first
+      if (activeTimeTracking && activeTimeTracking !== taskId) {
+        await stopTimeTracking(activeTimeTracking);
+      }
+
+      const updatedTask = await api.startTimeTracking(taskId);
+
+      // Update task in state
+      setTasks(prev => prev.map(t =>
+        t.id === taskId ? updatedTask : t
+      ));
+
+      setActiveTimeTracking(taskId);
+      return updatedTask;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  // Stop time tracking for a task
+  const stopTimeTracking = async (taskId) => {
+    try {
+      const updatedTask = await api.stopTimeTracking(taskId);
+
+      // Update task in state
+      setTasks(prev => prev.map(t =>
+        t.id === taskId ? updatedTask : t
+      ));
+
+      if (activeTimeTracking === taskId) {
+        setActiveTimeTracking(null);
+      }
+
+      return updatedTask;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  // Toggle time tracking for a task
+  const toggleTimeTracking = async (taskId) => {
+    if (activeTimeTracking === taskId) {
+      return await stopTimeTracking(taskId);
+    } else {
+      return await startTimeTracking(taskId);
+    }
+  };
+
   const value = {
     tasks,
     loading,
@@ -545,7 +599,11 @@ export const TaskProvider = ({ children, userId }) => {
     search,
     getSuggestions,
     acceptSuggestion,
-    rejectSuggestion
+    rejectSuggestion,
+    activeTimeTracking,
+    startTimeTracking,
+    stopTimeTracking,
+    toggleTimeTracking
   };
 
   return (
