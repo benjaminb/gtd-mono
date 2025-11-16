@@ -3,7 +3,7 @@ import { useTask } from '../context/TaskContext';
 import './TaskNode.css';
 
 const TaskNode = ({ task, onEdit, onAddSubtask }) => {
-  const { getChildren, updateTask, deleteTask, matchesFilters, filters } = useTask();
+  const { getChildren, updateTask, deleteTask, matchesFilters, filters, acceptSuggestion, rejectSuggestion } = useTask();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const children = getChildren(task.id);
@@ -58,11 +58,34 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
     onAddSubtask(task);
   };
 
+  const handleAcceptSuggestion = async (e) => {
+    e.stopPropagation();
+    try {
+      await acceptSuggestion(task.id);
+    } catch (err) {
+      console.error('Error accepting suggestion:', err);
+    }
+  };
+
+  const handleRejectSuggestion = async (e) => {
+    e.stopPropagation();
+    if (window.confirm(`Reject suggestion "${task.name}"?`)) {
+      try {
+        await rejectSuggestion(task.id);
+      } catch (err) {
+        console.error('Error rejecting suggestion:', err);
+      }
+    }
+  };
+
   const customProps = task.customProperties || {};
   const hasCustomProps = Object.keys(customProps).length > 0;
+  const source = task.source || 'user';
+  const isAiSuggested = source === 'ai-suggested';
+  const isAiAccepted = source === 'ai-accepted';
 
   return (
-    <div className="task-node">
+    <div className={`task-node ${isAiSuggested ? 'ai-suggested' : ''} ${isAiAccepted ? 'ai-accepted' : ''}`}>
       <div
         className={`task-header ${hasActiveFilters && directMatch ? 'filter-match' : ''}`}
         onClick={toggleDetails}
@@ -83,12 +106,24 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
           {task.name}
         </span>
 
+        {isAiSuggested && <span className="ai-badge ai-suggested-badge" title="AI Suggested">AI</span>}
+        {isAiAccepted && <span className="ai-badge ai-accepted-badge" title="AI Accepted">✓ AI</span>}
+
         {hasCustomProps && <span className="has-props-indicator">●</span>}
 
         <div className="task-actions">
-          <button onClick={handleAddSubtask} title="Add subtask">+</button>
-          <button onClick={handleEdit} title="Edit">✎</button>
-          <button onClick={handleDelete} title="Delete">×</button>
+          {isAiSuggested ? (
+            <>
+              <button onClick={handleAcceptSuggestion} title="Accept suggestion" className="accept-btn">✓</button>
+              <button onClick={handleRejectSuggestion} title="Reject suggestion" className="reject-btn">×</button>
+            </>
+          ) : (
+            <>
+              <button onClick={handleAddSubtask} title="Add subtask">+</button>
+              <button onClick={handleEdit} title="Edit">✎</button>
+              <button onClick={handleDelete} title="Delete">×</button>
+            </>
+          )}
         </div>
       </div>
 

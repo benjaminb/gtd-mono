@@ -384,6 +384,47 @@ export const TaskProvider = ({ children, userId }) => {
     };
   };
 
+  // Accept an AI suggestion
+  const acceptSuggestion = async (taskId) => {
+    try {
+      const updated = await api.acceptSuggestion(taskId);
+
+      setTasks(prev => prev.map(task =>
+        task.id === taskId ? updated : task
+      ));
+
+      return updated;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  // Reject an AI suggestion
+  const rejectSuggestion = async (taskId) => {
+    try {
+      await api.rejectSuggestion(taskId);
+
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+
+      // Remove from relationships
+      setTaskRelationships(prev => {
+        const newRel = { ...prev };
+        delete newRel[taskId];
+
+        // Remove as child from any parent
+        Object.keys(newRel).forEach(parentId => {
+          newRel[parentId] = newRel[parentId].filter(id => id !== taskId);
+        });
+
+        return newRel;
+      });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   // Get autocomplete suggestions based on query
   const getSuggestions = (query, limit = 10) => {
     if (!query || query.length < 2) {
@@ -502,7 +543,9 @@ export const TaskProvider = ({ children, userId }) => {
     setFilters,
     matchesFilters,
     search,
-    getSuggestions
+    getSuggestions,
+    acceptSuggestion,
+    rejectSuggestion
   };
 
   return (

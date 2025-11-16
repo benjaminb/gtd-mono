@@ -102,6 +102,21 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to fetch hierarchy');
     return response.json();
   }
+
+  async acceptSuggestion(taskId) {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/accept-suggestion`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to accept suggestion');
+    return response.json();
+  }
+
+  async rejectSuggestion(taskId) {
+    const response = await fetch(`${API_BASE}/tasks/${taskId}/reject-suggestion`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to reject suggestion');
+  }
 }
 
 export default new ApiService();

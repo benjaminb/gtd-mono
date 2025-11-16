@@ -255,3 +255,24 @@
 .add-subtask-btn:hover {
   background: #45a049;
 }
+
+/* AI Suggestion Badges */
+.ai-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.ai-suggested-badge {
+  background: #667eea;
+  color: white;
+}
+
+.ai-accepted-badge {
+  background: #4CAF50;
+  color: white;
+}

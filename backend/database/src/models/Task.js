@@ -8,10 +8,12 @@ class Task {
    * @param {string} taskData.userId - Owner user ID
    * @param {string} taskData.name - Task name
    * @param {boolean} [taskData.done=false] - Task completion status
+   * @param {string} [taskData.source='user'] - Source: 'user', 'ai-suggested', 'ai-accepted'
+   * @param {Object} [taskData.suggestionMetadata] - Metadata for AI suggestions
    * @param {Object} [taskData.customProperties={}] - Custom user-defined properties
    * @returns {Promise<Object>} Created task
    */
-  static async create({ userId, name, done = false, customProperties = {} }) {
+  static async create({ userId, name, done = false, source = 'user', suggestionMetadata = null, customProperties = {} }) {
     const session = driver.session();
     try {
       const id = uuidv4();
@@ -24,17 +26,30 @@ class Task {
            id: $id,
            name: $name,
            done: $done,
+           source: $source,
+           suggestionMetadata: $suggestionMetadata,
            createdAt: $createdAt,
            updatedAt: $updatedAt,
            customProperties: $customProperties
          })
          CREATE (u)-[:OWNS]->(t)
          RETURN t`,
-        { userId, id, name, done, createdAt, updatedAt, customProperties: JSON.stringify(customProperties) }
+        {
+          userId,
+          id,
+          name,
+          done,
+          source,
+          suggestionMetadata: suggestionMetadata ? JSON.stringify(suggestionMetadata) : null,
+          createdAt,
+          updatedAt,
+          customProperties: JSON.stringify(customProperties)
+        }
       );
 
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
+      task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
       return task;
     } finally {
       await session.close();
@@ -60,6 +75,9 @@ class Task {
 
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
+      task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      // Ensure source field exists (for backward compatibility)
+      task.source = task.source || 'user';
       return task;
     } finally {
       await session.close();
@@ -75,7 +93,7 @@ class Task {
   static async update(id, updates) {
     const session = driver.session();
     try {
-      const allowedFields = ['name', 'done', 'customProperties'];
+      const allowedFields = ['name', 'done', 'source', 'suggestionMetadata', 'customProperties'];
       const setClause = ['t.updatedAt = $updatedAt'];
       const params = {
         id,
@@ -85,8 +103,8 @@ class Task {
       Object.keys(updates).forEach(key => {
         if (allowedFields.includes(key)) {
           setClause.push(`t.${key} = $${key}`);
-          if (key === 'customProperties') {
-            params[key] = JSON.stringify(updates[key]);
+          if (key === 'customProperties' || key === 'suggestionMetadata') {
+            params[key] = updates[key] ? JSON.stringify(updates[key]) : null;
           } else {
             params[key] = updates[key];
           }
@@ -106,6 +124,8 @@ class Task {
 
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
+      task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.source = task.source || 'user';
       return task;
     } finally {
       await session.close();
@@ -200,6 +220,8 @@ class Task {
       return result.records.map(record => {
         const task = record.get('subtask').properties;
         task.customProperties = JSON.parse(task.customProperties || '{}');
+        task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+        task.source = task.source || 'user';
         return task;
       });
     } finally {
@@ -225,6 +247,8 @@ class Task {
       return result.records.map(record => {
         const task = record.get('parent').properties;
         task.customProperties = JSON.parse(task.customProperties || '{}');
+        task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+        task.source = task.source || 'user';
         return task;
       });
     } finally {
@@ -254,10 +278,14 @@ class Task {
 
       const task = result.records[0].get('t').properties;
       task.customProperties = JSON.parse(task.customProperties || '{}');
+      task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.source = task.source || 'user';
 
       const subtasks = result.records[0].get('subtasks').map(node => {
         const t = node.properties;
         t.customProperties = JSON.parse(t.customProperties || '{}');
+        t.suggestionMetadata = t.suggestionMetadata ? JSON.parse(t.suggestionMetadata) : null;
+        t.source = t.source || 'user';
         return t;
       });
 
@@ -312,6 +340,65 @@ class Task {
       );
 
       return result.records.length > 0;
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Accept an AI suggestion - converts from 'ai-suggested' to 'ai-accepted'
+   * @param {string} id - Task ID
+   * @returns {Promise<Object|null>} Updated task or null
+   */
+  static async acceptSuggestion(id) {
+    const session = driver.session();
+    try {
+      const result = await session.run(
+        `MATCH (t:Task {id: $id})
+         WHERE t.source = 'ai-suggested'
+         SET t.source = 'ai-accepted',
+             t.updatedAt = $updatedAt,
+             t.suggestionMetadata = $suggestionMetadata
+         RETURN t`,
+        {
+          id,
+          updatedAt: new Date().toISOString(),
+          suggestionMetadata: JSON.stringify({
+            ...JSON.parse(result.records[0]?.get('t')?.properties?.suggestionMetadata || '{}'),
+            acceptedAt: new Date().toISOString()
+          })
+        }
+      );
+
+      if (result.records.length === 0) {
+        return null;
+      }
+
+      const task = result.records[0].get('t').properties;
+      task.customProperties = JSON.parse(task.customProperties || '{}');
+      task.suggestionMetadata = task.suggestionMetadata ? JSON.parse(task.suggestionMetadata) : null;
+      task.source = task.source || 'user';
+      return task;
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Reject an AI suggestion - deletes the suggested task
+   * @param {string} id - Task ID
+   * @returns {Promise<boolean>} True if deleted
+   */
+  static async rejectSuggestion(id) {
+    const session = driver.session();
+    try {
+      await session.run(
+        `MATCH (t:Task {id: $id})
+         WHERE t.source = 'ai-suggested'
+         DETACH DELETE t`,
+        { id }
+      );
+      return true;
     } finally {
       await session.close();
     }

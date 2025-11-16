@@ -150,34 +150,66 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
         ))}
 
         {/* Draw nodes */}
-        {graphData.nodes.map((node) => (
-          <g
-            key={node.id}
-            className={`graph-node ${selectedTask?.id === node.id ? 'selected' : ''} ${node.task.done ? 'done' : ''}`}
-            onClick={() => handleNodeClick(node)}
-            style={{ cursor: 'pointer' }}
-          >
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r="30"
-              fill={node.task.done ? '#4CAF50' : '#667eea'}
-              stroke={selectedTask?.id === node.id ? '#ff9800' : '#5568d3'}
-              strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
-            />
-            <text
-              x={node.x}
-              y={node.y + 45}
-              textAnchor="middle"
-              className="node-label"
-              fill="#333"
+        {graphData.nodes.map((node) => {
+          const source = node.task.source || 'user';
+          const isAiSuggested = source === 'ai-suggested';
+          const isAiAccepted = source === 'ai-accepted';
+
+          let fillColor = '#667eea'; // default
+          let strokeDasharray = 'none';
+
+          if (node.task.done) {
+            fillColor = '#4CAF50';
+          } else if (isAiSuggested) {
+            fillColor = '#667eea';
+            strokeDasharray = '5,5';
+          } else if (isAiAccepted) {
+            fillColor = '#4CAF50';
+          }
+
+          return (
+            <g
+              key={node.id}
+              className={`graph-node ${selectedTask?.id === node.id ? 'selected' : ''} ${node.task.done ? 'done' : ''} ${isAiSuggested ? 'ai-suggested' : ''} ${isAiAccepted ? 'ai-accepted' : ''}`}
+              onClick={() => handleNodeClick(node)}
+              style={{ cursor: 'pointer' }}
             >
-              {node.task.name.length > 15
-                ? node.task.name.substring(0, 15) + '...'
-                : node.task.name}
-            </text>
-          </g>
-        ))}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r="30"
+                fill={fillColor}
+                fillOpacity={isAiSuggested ? 0.7 : 1}
+                stroke={selectedTask?.id === node.id ? '#ff9800' : '#5568d3'}
+                strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
+                strokeDasharray={strokeDasharray}
+              />
+              {(isAiSuggested || isAiAccepted) && (
+                <text
+                  x={node.x}
+                  y={node.y + 5}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="white"
+                  fontWeight="bold"
+                >
+                  {isAiSuggested ? 'AI' : '✓'}
+                </text>
+              )}
+              <text
+                x={node.x}
+                y={node.y + 45}
+                textAnchor="middle"
+                className="node-label"
+                fill="#333"
+              >
+                {node.task.name.length > 15
+                  ? node.task.name.substring(0, 15) + '...'
+                  : node.task.name}
+              </text>
+            </g>
+          );
+        })}
       </svg>
 
       {selectedTask && (
@@ -194,7 +226,7 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
 
 // Task detail panel component
 const TaskDetailPanel = ({ task, onClose, onEdit, onAddSubtask }) => {
-  const { updateTask } = useTask();
+  const { updateTask, acceptSuggestion, rejectSuggestion } = useTask();
   const [editingProperty, setEditingProperty] = useState(null);
   const [propertyValue, setPropertyValue] = useState('');
 
@@ -226,16 +258,70 @@ const TaskDetailPanel = ({ task, onClose, onEdit, onAddSubtask }) => {
     }
   };
 
+  const handleAcceptSuggestion = async () => {
+    try {
+      await acceptSuggestion(task.id);
+      onClose(); // Close panel after accepting
+    } catch (err) {
+      console.error('Error accepting suggestion:', err);
+    }
+  };
+
+  const handleRejectSuggestion = async () => {
+    if (window.confirm(`Reject suggestion "${task.name}"?`)) {
+      try {
+        await rejectSuggestion(task.id);
+        onClose(); // Close panel after rejecting
+      } catch (err) {
+        console.error('Error rejecting suggestion:', err);
+      }
+    }
+  };
+
   const customProps = task.customProperties || {};
+  const source = task.source || 'user';
+  const isAiSuggested = source === 'ai-suggested';
+  const isAiAccepted = source === 'ai-accepted';
 
   return (
     <div className="task-detail-panel">
       <div className="panel-header">
-        <h3>{task.name}</h3>
+        <h3>
+          {task.name}
+          {isAiSuggested && <span className="ai-badge ai-suggested-badge" style={{ marginLeft: '8px' }}>AI</span>}
+          {isAiAccepted && <span className="ai-badge ai-accepted-badge" style={{ marginLeft: '8px' }}>✓ AI</span>}
+        </h3>
         <button className="close-btn" onClick={onClose}>×</button>
       </div>
 
       <div className="panel-content">
+        {isAiSuggested && (
+          <div className="suggestion-actions" style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
+            <button onClick={handleAcceptSuggestion} className="accept-btn" style={{
+              padding: '8px 16px',
+              background: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}>
+              ✓ Accept Suggestion
+            </button>
+            <button onClick={handleRejectSuggestion} className="reject-btn" style={{
+              padding: '8px 16px',
+              background: '#f44336',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}>
+              × Reject
+            </button>
+          </div>
+        )}
+
         <div className="task-status">
           <label>
             <input

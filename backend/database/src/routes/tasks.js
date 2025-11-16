@@ -8,7 +8,7 @@ const Task = require('../models/Task');
  */
 router.post('/', async (req, res) => {
   try {
-    const { userId, name, done, customProperties } = req.body;
+    const { userId, name, done, source, suggestionMetadata, customProperties } = req.body;
 
     if (!userId || !name) {
       return res.status(400).json({
@@ -20,6 +20,8 @@ router.post('/', async (req, res) => {
       userId,
       name,
       done: done || false,
+      source: source || 'user',
+      suggestionMetadata: suggestionMetadata || null,
       customProperties: customProperties || {}
     });
 
@@ -189,6 +191,41 @@ router.get('/:id/owner', async (req, res) => {
   } catch (error) {
     console.error('Error fetching task owner:', error);
     res.status(500).json({ error: 'Failed to fetch task owner' });
+  }
+});
+
+/**
+ * POST /api/tasks/:id/accept-suggestion
+ * Accept an AI suggestion (converts 'ai-suggested' to 'ai-accepted')
+ */
+router.post('/:id/accept-suggestion', async (req, res) => {
+  try {
+    const task = await Task.acceptSuggestion(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({
+        error: 'Task not found or not an AI suggestion'
+      });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error('Error accepting suggestion:', error);
+    res.status(500).json({ error: 'Failed to accept suggestion' });
+  }
+});
+
+/**
+ * DELETE /api/tasks/:id/reject-suggestion
+ * Reject an AI suggestion (deletes the task)
+ */
+router.delete('/:id/reject-suggestion', async (req, res) => {
+  try {
+    await Task.rejectSuggestion(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error rejecting suggestion:', error);
+    res.status(500).json({ error: 'Failed to reject suggestion' });
   }
 });
 
