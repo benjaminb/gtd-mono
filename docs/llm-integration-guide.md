@@ -197,6 +197,49 @@ llmService.switchProvider('anthropic', {
 
 ## Advanced Features
 
+### Emoji Prediction
+
+The system automatically predicts an appropriate emoji icon for each task using the LLM:
+
+**How It Works:**
+1. When a task is created without an emoji, the LLM analyzes the task name and properties
+2. It predicts a single emoji that best represents the task
+3. The emoji is automatically applied (no user approval needed)
+4. Users can easily change the emoji anytime via the emoji picker
+
+**Backend Implementation:**
+```javascript
+// In routes/tasks.js - automatic prediction on task creation
+if (!emoji && llmService.isConfigured()) {
+  emoji = await llmService.predictEmoji({ name, customProperties });
+}
+
+// In services/llm/LLMService.js
+async predictEmoji(task) {
+  const prompt = generateEmojiPredictionPrompt(task);
+  const response = await this.provider.completeJSON({
+    prompt,
+    temperature: 0.5
+  });
+  return response.emoji || '📋'; // Default fallback
+}
+```
+
+**Frontend Usage:**
+- **Graph View**: Emoji displays in the circular "bulb" of each task node
+- **List View**: Emoji appears next to the task name
+- **Task Form**: EmojiPicker component allows easy selection/change
+- **Default**: If no emoji is set or prediction fails, defaults to 📋
+
+**Common Predicted Emojis:**
+- Writing/Documentation: 📝
+- Coding/Development: 💻
+- Email: 📧
+- Meetings: 📞
+- Planning: 📅
+- Analysis: 📊
+- Goals: 🎯
+
 ### Custom Prompts
 
 Edit `/backend/database/src/services/llm/prompts.js` to customize how suggestions are generated:
