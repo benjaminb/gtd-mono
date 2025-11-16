@@ -1,5 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import {
+  fuzzyMatch,
+  scoreTaskMatch,
+  isProbablyPropertyName,
+  parsePropertyQuery
+} from '../utils/search';
 
 const TaskContext = createContext();
 
@@ -237,6 +243,147 @@ export const TaskProvider = ({ children, userId }) => {
     }
   };
 
+  // Get all unique custom property names from all tasks
+  const getAllPropertyNames = () => {
+    const propNames = new Set();
+    tasks.forEach(task => {
+      Object.keys(task.customProperties || {}).forEach(key => {
+        propNames.add(key);
+      });
+    });
+    return Array.from(propNames);
+  };
+
+  // Universal search function
+  const search = (query) => {
+    if (!query || !query.trim()) {
+      return null;
+    }
+
+    const q = query.trim();
+
+    // Check if it's a property:value pattern
+    const propertyQuery = parsePropertyQuery(q);
+    if (propertyQuery) {
+      return searchByPropertyValue(propertyQuery.propertyName, propertyQuery.propertyValue);
+    }
+
+    // Check if it's a property name (for organized view)
+    const allPropertyNames = getAllPropertyNames();
+    const propertyCheck = isProbablyPropertyName(q, allPropertyNames);
+    if (propertyCheck.match) {
+      return searchByProperty(propertyCheck.propertyName);
+    }
+
+    // Default: search by task name
+    return searchByTaskName(q);
+  };
+
+  // Search tasks by name (with fuzzy matching)
+  const searchByTaskName = (query) => {
+    const matches = [];
+
+    tasks.forEach(task => {
+      // Fuzzy match on task name
+      if (fuzzyMatch(task.name, query)) {
+        const score = scoreTaskMatch(task, query);
+        matches.push({ task, score });
+      }
+    });
+
+    // Sort by relevance score (highest first)
+    matches.sort((a, b) => b.score - a.score);
+
+    return {
+      mode: 'task-list',
+      data: matches.map(m => m.task),
+      query,
+      matchCount: matches.length
+    };
+  };
+
+  // Search by property value
+  const searchByPropertyValue = (propertyName, propertyValue) => {
+    const matchedTasks = [];
+
+    tasks.forEach(task => {
+      const taskPropValue = task.customProperties?.[propertyName];
+      if (taskPropValue) {
+        // Fuzzy match on property value
+        if (fuzzyMatch(String(taskPropValue), propertyValue)) {
+          matchedTasks.push(task);
+        }
+      }
+    });
+
+    return {
+      mode: 'property-filter',
+      data: {
+        propertyName,
+        propertyValue,
+        tasks: matchedTasks
+      },
+      query: `${propertyName}:${propertyValue}`,
+      matchCount: matchedTasks.length
+    };
+  };
+
+  // Organize tasks by property (smart grouping)
+  const searchByProperty = (propertyName) => {
+    const tasksByValue = new Map();
+    let totalCount = 0;
+
+    tasks.forEach(task => {
+      const value = task.customProperties?.[propertyName];
+      if (value !== undefined && value !== null && value !== '') {
+        const key = String(value);
+        if (!tasksByValue.has(key)) {
+          tasksByValue.set(key, []);
+        }
+        tasksByValue.get(key).push(task);
+        totalCount++;
+      }
+    });
+
+    // Convert to array and sort groups
+    const groups = Array.from(tasksByValue.entries()).map(([value, tasks]) => ({
+      value,
+      tasks
+    }));
+
+    // Smart sorting based on value type
+    groups.sort((a, b) => {
+      // Try to parse as numbers
+      const numA = parseFloat(a.value);
+      const numB = parseFloat(b.value);
+
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numB - numA; // Descending order for numbers
+      }
+
+      // Try to parse as dates
+      const dateA = new Date(a.value);
+      const dateB = new Date(b.value);
+
+      if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+        return dateB - dateA; // Most recent first
+      }
+
+      // Default: alphabetical
+      return a.value.localeCompare(b.value);
+    });
+
+    return {
+      mode: 'property-view',
+      data: {
+        propertyName,
+        groups
+      },
+      query: propertyName,
+      matchCount: totalCount
+    };
+  };
+
   const value = {
     tasks,
     loading,
@@ -253,7 +400,8 @@ export const TaskProvider = ({ children, userId }) => {
     addCustomProperty,
     filters,
     setFilters,
-    matchesFilters
+    matchesFilters,
+    search
   };
 
   return (
