@@ -154,6 +154,59 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to check suggestions status');
     return response.json();
   }
+
+  // Property Schema endpoints
+  async createPropertySchema(data) {
+    const response = await fetch(`${API_BASE}/property-schemas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create property schema');
+    }
+    return response.json();
+  }
+
+  async getPropertySchema(id) {
+    const response = await fetch(`${API_BASE}/property-schemas/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch property schema');
+    return response.json();
+  }
+
+  async getUserPropertySchemas(userId) {
+    const response = await fetch(`${API_BASE}/property-schemas/user/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch property schemas');
+    return response.json();
+  }
+
+  async updatePropertySchema(id, updates) {
+    const response = await fetch(`${API_BASE}/property-schemas/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error('Failed to update property schema');
+    return response.json();
+  }
+
+  async deletePropertySchema(id) {
+    const response = await fetch(`${API_BASE}/property-schemas/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete property schema');
+  }
+
+  async validatePropertyValue(userId, propertyName, value) {
+    const response = await fetch(`${API_BASE}/property-schemas/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, propertyName, value })
+    });
+    if (!response.ok) throw new Error('Failed to validate property value');
+    return response.json();
+  }
 }
 
 export default new ApiService();

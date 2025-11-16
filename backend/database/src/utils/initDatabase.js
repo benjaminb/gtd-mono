@@ -30,6 +30,11 @@ async function initDatabase() {
       'CREATE CONSTRAINT task_id_unique IF NOT EXISTS FOR (t:Task) REQUIRE t.id IS UNIQUE'
     );
 
+    // PropertySchema constraints
+    await session.run(
+      'CREATE CONSTRAINT property_schema_id_unique IF NOT EXISTS FOR (ps:PropertySchema) REQUIRE ps.id IS UNIQUE'
+    );
+
     console.log('Creating indexes...');
 
     // Additional indexes for common queries

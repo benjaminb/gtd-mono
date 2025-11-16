@@ -11,6 +11,7 @@ const neo4jDriver = require('./utils/database');
 const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const suggestionRoutes = require('./routes/suggestions');
+const propertySchemaRoutes = require('./routes/propertySchemas');
 
 // Middleware
 app.use(cors());
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/property-schemas', propertySchemaRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

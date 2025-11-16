@@ -1,7 +1,54 @@
 const { v4: uuidv4 } = require('uuid');
 const driver = require('../utils/database');
+const PropertySchema = require('./PropertySchema');
 
 class Task {
+  /**
+   * Validate custom properties against user's property schemas
+   * @param {string} userId - User ID
+   * @param {Object} customProperties - Custom properties to validate
+   * @returns {Promise<Object>} { valid: boolean, errors: Object, normalized: Object }
+   */
+  static async validateCustomProperties(userId, customProperties) {
+    const errors = {};
+    const normalized = {};
+
+    if (!customProperties || Object.keys(customProperties).length === 0) {
+      return { valid: true, errors: {}, normalized: {} };
+    }
+
+    // Get all property schemas for this user
+    const schemas = await PropertySchema.getUserSchemas(userId);
+    const schemaMap = {};
+    schemas.forEach(schema => {
+      schemaMap[schema.propertyName] = schema;
+    });
+
+    // Validate each property
+    for (const [propName, propValue] of Object.entries(customProperties)) {
+      const schema = schemaMap[propName];
+
+      if (!schema) {
+        // No schema defined - default to text, allow any value
+        normalized[propName] = propValue;
+        continue;
+      }
+
+      const validation = PropertySchema.validateValue(schema, propValue);
+      if (!validation.valid) {
+        errors[propName] = validation.error;
+      } else {
+        // Use normalized value if provided, otherwise use original
+        normalized[propName] = validation.value !== undefined ? validation.value : propValue;
+      }
+    }
+
+    return {
+      valid: Object.keys(errors).length === 0,
+      errors,
+      normalized
+    };
+  }
   /**
    * Create a new task
    * @param {Object} taskData - Task data
@@ -14,6 +61,12 @@ class Task {
    * @returns {Promise<Object>} Created task
    */
   static async create({ userId, name, done = false, source = 'user', suggestionMetadata = null, customProperties = {} }) {
+    // Validate custom properties against schemas
+    const validation = await Task.validateCustomProperties(userId, customProperties);
+    if (!validation.valid) {
+      throw new Error(`Invalid custom properties: ${JSON.stringify(validation.errors)}`);
+    }
+
     const session = driver.session();
     try {
       const id = uuidv4();
@@ -43,7 +96,7 @@ class Task {
           suggestionMetadata: suggestionMetadata ? JSON.stringify(suggestionMetadata) : null,
           createdAt,
           updatedAt,
-          customProperties: JSON.stringify(customProperties)
+          customProperties: JSON.stringify(validation.normalized)
         }
       );
 
@@ -91,6 +144,29 @@ class Task {
    * @returns {Promise<Object|null>} Updated task or null
    */
   static async update(id, updates) {
+    // Validate custom properties if being updated
+    if (updates.customProperties) {
+      // Get task to find userId
+      const existingTask = await Task.findById(id);
+      if (!existingTask) {
+        return null;
+      }
+
+      // Get owner
+      const owner = await Task.getOwner(id);
+      if (!owner) {
+        throw new Error('Task owner not found');
+      }
+
+      const validation = await Task.validateCustomProperties(owner.id, updates.customProperties);
+      if (!validation.valid) {
+        throw new Error(`Invalid custom properties: ${JSON.stringify(validation.errors)}`);
+      }
+
+      // Use normalized values
+      updates.customProperties = validation.normalized;
+    }
+
     const session = driver.session();
     try {
       const allowedFields = ['name', 'done', 'source', 'suggestionMetadata', 'customProperties'];

@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
+import { PropertySchemaProvider } from './context/PropertySchemaContext';
 import Auth from './components/Auth';
 import TaskTree from './components/TaskTree';
 import './App.css';
@@ -26,9 +27,11 @@ function AppContent() {
       </header>
 
       <main className="app-main">
-        <TaskProvider userId={user.id}>
-          <TaskTree />
-        </TaskProvider>
+        <PropertySchemaProvider>
+          <TaskProvider userId={user.id}>
+            <TaskTree />
+          </TaskProvider>
+        </PropertySchemaProvider>
       </main>
     </div>
   );
