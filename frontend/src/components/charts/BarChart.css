@@ -1,0 +1,29 @@
+.chart-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.chart-container h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.chart-empty {
+  color: #999;
+  text-align: center;
+  padding: 40px;
+  font-size: 14px;
+}
+
+.bar-chart .bar {
+  transition: fill 0.2s;
+}
+
+.bar-chart .bar:hover {
+  fill: #5568d3;
+  cursor: pointer;
+}

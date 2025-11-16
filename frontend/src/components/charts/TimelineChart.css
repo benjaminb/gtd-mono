@@ -1,0 +1,37 @@
+.timeline-chart .timeline-line {
+  transition: stroke-width 0.2s;
+}
+
+.timeline-chart .timeline-line:hover {
+  stroke-width: 4;
+}
+
+.timeline-chart .timeline-point {
+  transition: r 0.2s;
+  cursor: pointer;
+}
+
+.timeline-chart .timeline-point:hover {
+  r: 7;
+}
+
+.timeline-legend {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.timeline-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.timeline-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}

@@ -12,6 +12,7 @@ const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const suggestionRoutes = require('./routes/suggestions');
 const propertySchemaRoutes = require('./routes/propertySchemas');
+const analyticsRoutes = require('./routes/analytics');
 
 // Middleware
 app.use(cors());
@@ -40,6 +41,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/property-schemas', propertySchemaRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

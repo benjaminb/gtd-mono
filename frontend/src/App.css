@@ -31,18 +31,48 @@ body {
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 40px;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 24px;
   color: #333;
+  flex-shrink: 0;
+}
+
+.app-nav {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-btn {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.nav-btn.active {
+  background: #667eea;
+  color: white;
 }
 
 .user-info {

@@ -207,6 +207,54 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to validate property value');
     return response.json();
   }
+
+  // Analytics endpoints
+  async getCompletionAnalytics(userId, options = {}) {
+    const { startDate, endDate, groupBy, propertyName } = options;
+    const params = new URLSearchParams({ userId });
+
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (groupBy) params.append('groupBy', groupBy);
+    if (propertyName) params.append('propertyName', propertyName);
+
+    const response = await fetch(`${API_BASE}/analytics/completion?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch completion analytics');
+    return response.json();
+  }
+
+  async getInactiveProjects(userId, options = {}) {
+    const { daysSinceUpdate = 30, minSubtasks = 2 } = options;
+    const params = new URLSearchParams({
+      userId,
+      daysSinceUpdate: daysSinceUpdate.toString(),
+      minSubtasks: minSubtasks.toString()
+    });
+
+    const response = await fetch(`${API_BASE}/analytics/inactive-projects?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch inactive projects');
+    return response.json();
+  }
+
+  async getTimelineAnalytics(userId, options = {}) {
+    const { startDate, endDate } = options;
+    const params = new URLSearchParams({ userId });
+
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const response = await fetch(`${API_BASE}/analytics/timeline?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch timeline analytics');
+    return response.json();
+  }
+
+  async getPropertyDistribution(userId, propertyName) {
+    const params = new URLSearchParams({ userId, propertyName });
+
+    const response = await fetch(`${API_BASE}/analytics/property-distribution?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch property distribution');
+    return response.json();
+  }
 }
 
 export default new ApiService();
