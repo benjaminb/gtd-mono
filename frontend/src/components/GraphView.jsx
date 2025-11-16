@@ -13,9 +13,9 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
     const nodes = [];
     const edges = [];
 
-    const NODE_WIDTH = 120;
-    const NODE_HEIGHT = 60;
-    const HORIZONTAL_SPACING = 180;
+    const NODE_WIDTH = 190; // Circle (50) + Rectangle (140)
+    const NODE_HEIGHT = 40;
+    const HORIZONTAL_SPACING = 250; // Increased for wider nodes
     const VERTICAL_SPACING = 120;
 
     // Calculate positions using tree layout
@@ -78,10 +78,10 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
     const xs = graphData.nodes.map(n => n.x);
     const ys = graphData.nodes.map(n => n.y);
 
-    const minX = Math.min(...xs) - padding;
-    const maxX = Math.max(...xs) + padding + 120; // +120 for node width
+    const minX = Math.min(...xs) - padding - 30; // Extra for circle on left
+    const maxX = Math.max(...xs) + padding + 190; // Circle (50) + Rectangle (140)
     const minY = Math.min(...ys) - padding;
-    const maxY = Math.max(...ys) + padding + 60; // +60 for node height
+    const maxY = Math.max(...ys) + padding + 40; // Node height
 
     return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
   };
@@ -140,9 +140,9 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
           <line
             key={index}
             x1={edge.from.x}
-            y1={edge.from.y + 30} // Offset from center of parent node
+            y1={edge.from.y + 25} // Offset from bottom of parent circle
             x2={edge.to.x}
-            y2={edge.to.y - 30} // Offset to top of child node
+            y2={edge.to.y - 25} // Offset to top of child circle
             stroke="#667eea"
             strokeWidth="2"
             markerEnd="url(#arrowhead)"
@@ -167,6 +167,21 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
             fillColor = '#4CAF50';
           }
 
+          // Thermometer shape constants
+          const circleRadius = 25;
+          const rectWidth = 140;
+          const rectHeight = 40;
+          const rectX = node.x + circleRadius;
+          const rectY = node.y - rectHeight / 2;
+
+          // Get first letter of task name
+          const firstLetter = node.task.name.charAt(0).toUpperCase();
+
+          // Truncate task name for display
+          const displayName = node.task.name.length > 20
+            ? node.task.name.substring(0, 20) + '...'
+            : node.task.name;
+
           return (
             <g
               key={node.id}
@@ -174,39 +189,80 @@ const GraphView = ({ onEditTask, onAddSubtask }) => {
               onClick={() => handleNodeClick(node)}
               style={{ cursor: 'pointer' }}
             >
+              {/* Rectangle (body of thermometer) */}
+              <rect
+                x={rectX}
+                y={rectY}
+                width={rectWidth}
+                height={rectHeight}
+                fill="white"
+                stroke={selectedTask?.id === node.id ? '#ff9800' : '#5568d3'}
+                strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
+                strokeDasharray={strokeDasharray}
+                rx="4"
+              />
+
+              {/* Circle (bulb of thermometer) */}
               <circle
                 cx={node.x}
                 cy={node.y}
-                r="30"
+                r={circleRadius}
                 fill={fillColor}
                 fillOpacity={isAiSuggested ? 0.7 : 1}
                 stroke={selectedTask?.id === node.id ? '#ff9800' : '#5568d3'}
                 strokeWidth={selectedTask?.id === node.id ? '3' : '2'}
                 strokeDasharray={strokeDasharray}
               />
-              {(isAiSuggested || isAiAccepted) && (
-                <text
-                  x={node.x}
-                  y={node.y + 5}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill="white"
-                  fontWeight="bold"
-                >
-                  {isAiSuggested ? 'AI' : '✓'}
-                </text>
-              )}
+
+              {/* First letter in circle */}
               <text
                 x={node.x}
-                y={node.y + 45}
+                y={node.y + 8}
                 textAnchor="middle"
-                className="node-label"
-                fill="#333"
+                fontSize="20"
+                fill="white"
+                fontWeight="bold"
               >
-                {node.task.name.length > 15
-                  ? node.task.name.substring(0, 15) + '...'
-                  : node.task.name}
+                {firstLetter}
               </text>
+
+              {/* Task name in rectangle */}
+              <text
+                x={rectX + 10}
+                y={node.y + 5}
+                textAnchor="start"
+                fontSize="13"
+                fill="#333"
+                fontWeight="500"
+              >
+                {displayName}
+              </text>
+
+              {/* AI badge in rectangle if applicable */}
+              {isAiSuggested && (
+                <text
+                  x={rectX + rectWidth - 30}
+                  y={node.y + 5}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#667eea"
+                  fontWeight="bold"
+                >
+                  AI
+                </text>
+              )}
+              {isAiAccepted && (
+                <text
+                  x={rectX + rectWidth - 30}
+                  y={node.y + 5}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#4CAF50"
+                  fontWeight="bold"
+                >
+                  ✓ AI
+                </text>
+              )}
             </g>
           );
         })}

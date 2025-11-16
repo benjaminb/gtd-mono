@@ -1,0 +1,258 @@
+.suggestions-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.suggestions-panel.collapsed {
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+}
+
+.suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.suggestions-header:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestions-icon {
+  font-size: 24px;
+}
+
+.suggestions-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.suggestions-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-accept-btn,
+.batch-reject-btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.batch-accept-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.batch-reject-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.expand-icon {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 8px;
+}
+
+.suggestions-content {
+  background: white;
+  padding: 16px 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestion-item {
+  background: #f9f9ff;
+  border: 2px solid #e8eeff;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.suggestion-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.suggestion-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.suggestion-info {
+  flex: 1;
+}
+
+.suggestion-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.suggestion-metadata {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.suggestion-reasoning {
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.reasoning-label {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.suggestion-confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.confidence-label {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 12px;
+}
+
+.confidence-bar {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 120px;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50 0%, #667eea 100%);
+  transition: width 0.3s ease;
+}
+
+.confidence-value {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  min-width: 35px;
+  text-align: right;
+}
+
+.suggestion-properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.property-tag {
+  background: #667eea;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.suggestion-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.accept-suggestion-btn,
+.reject-suggestion-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.accept-suggestion-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.accept-suggestion-btn:hover {
+  background: #45a049;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+}
+
+.reject-suggestion-btn {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.reject-suggestion-btn:hover {
+  background: #f44336;
+  color: white;
+  box-shadow: 0 2px 6px rgba(244, 67, 54, 0.3);
+}
+
+/* Scrollbar styling */
+.suggestions-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.suggestions-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.suggestions-content::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 4px;
+}
+
+.suggestions-content::-webkit-scrollbar-thumb:hover {
+  background: #5568d3;
+}

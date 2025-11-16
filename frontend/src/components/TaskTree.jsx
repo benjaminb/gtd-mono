@@ -6,6 +6,7 @@ import FilterPanel from './FilterPanel';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
 import GraphView from './GraphView';
+import SuggestionsPanel from './SuggestionsPanel';
 import './TaskTree.css';
 
 const TaskTree = () => {
@@ -91,6 +92,8 @@ const TaskTree = () => {
       </div>
 
       <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+
+      <SuggestionsPanel />
 
       {searchResults ? (
         <SearchResults
