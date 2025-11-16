@@ -5,6 +5,7 @@ import TaskForm from './TaskForm';
 import FilterPanel from './FilterPanel';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
+import GraphView from './GraphView';
 import './TaskTree.css';
 
 const TaskTree = () => {
@@ -13,6 +14,7 @@ const TaskTree = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [parentForNewTask, setParentForNewTask] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'graph'
 
   const rootTasks = getRootTasks();
 
@@ -65,9 +67,27 @@ const TaskTree = () => {
     <div className="task-tree">
       <div className="task-tree-header">
         <h2>Tasks</h2>
-        <button className="add-task-btn" onClick={handleAddTask}>
-          + Add Task
-        </button>
+        <div className="header-actions">
+          <div className="view-toggle">
+            <button
+              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List view"
+            >
+              ☰ List
+            </button>
+            <button
+              className={`view-btn ${viewMode === 'graph' ? 'active' : ''}`}
+              onClick={() => setViewMode('graph')}
+              title="Graph view"
+            >
+              ◉ Graph
+            </button>
+          </div>
+          <button className="add-task-btn" onClick={handleAddTask}>
+            + Add Task
+          </button>
+        </div>
       </div>
 
       <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
@@ -75,6 +95,11 @@ const TaskTree = () => {
       {searchResults ? (
         <SearchResults
           searchResults={searchResults}
+          onEditTask={handleEditTask}
+          onAddSubtask={handleAddSubtask}
+        />
+      ) : viewMode === 'graph' ? (
+        <GraphView
           onEditTask={handleEditTask}
           onAddSubtask={handleAddSubtask}
         />

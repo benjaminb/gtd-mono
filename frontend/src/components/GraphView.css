@@ -1,0 +1,257 @@
+.graph-view {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.graph-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.graph-node {
+  transition: all 0.2s;
+}
+
+.graph-node:hover circle {
+  filter: brightness(1.1);
+  stroke-width: 3;
+}
+
+.graph-node.selected circle {
+  stroke: #ff9800;
+  stroke-width: 4;
+}
+
+.graph-node.done circle {
+  fill: #4CAF50;
+}
+
+.node-label {
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+
+.graph-view-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #666;
+}
+
+/* Task Detail Panel */
+.task-detail-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  max-height: calc(100% - 40px);
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  flex: 1;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.panel-content {
+  padding: 16px;
+}
+
+.task-status {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.task-status label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.task-status input[type="checkbox"] {
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.task-meta {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.meta-item {
+  font-size: 13px;
+  color: #666;
+  margin: 4px 0;
+}
+
+.meta-item strong {
+  color: #333;
+}
+
+.custom-properties {
+  margin-bottom: 16px;
+}
+
+.custom-properties h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.property-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.property-row strong {
+  color: #667eea;
+  min-width: 80px;
+}
+
+.property-value {
+  flex: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.property-value:hover {
+  background: #e8e8e8;
+}
+
+.property-edit {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.property-edit input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #667eea;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.property-edit button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.property-edit button:first-of-type {
+  background: #4CAF50;
+  color: white;
+}
+
+.property-edit button:first-of-type:hover {
+  background: #45a049;
+}
+
+.property-edit button:last-of-type {
+  background: #f44336;
+  color: white;
+}
+
+.property-edit button:last-of-type:hover {
+  background: #da190b;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.panel-actions button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.edit-btn {
+  background: #667eea;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #5568d3;
+}
+
+.add-subtask-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.add-subtask-btn:hover {
+  background: #45a049;
+}
