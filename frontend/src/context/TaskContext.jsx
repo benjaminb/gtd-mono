@@ -384,6 +384,106 @@ export const TaskProvider = ({ children, userId }) => {
     };
   };
 
+  // Get autocomplete suggestions based on query
+  const getSuggestions = (query, limit = 10) => {
+    if (!query || query.length < 2) {
+      return [];
+    }
+
+    const suggestions = [];
+    const q = query.toLowerCase();
+
+    // Check if it's a property:value pattern
+    const propertyQuery = parsePropertyQuery(query);
+
+    if (propertyQuery) {
+      // Suggest property values for this property
+      const allPropertyNames = getAllPropertyNames();
+
+      if (allPropertyNames.includes(propertyQuery.propertyName)) {
+        const valueSet = new Set();
+        tasks.forEach(task => {
+          const value = task.customProperties?.[propertyQuery.propertyName];
+          if (value && fuzzyMatch(String(value), propertyQuery.propertyValue)) {
+            valueSet.add(String(value));
+          }
+        });
+
+        Array.from(valueSet).slice(0, limit).forEach(value => {
+          suggestions.push({
+            type: 'property-value',
+            text: `${propertyQuery.propertyName}:${value}`,
+            label: value,
+            category: propertyQuery.propertyName
+          });
+        });
+      }
+    } else {
+      // Suggest task names
+      const taskMatches = [];
+      tasks.forEach(task => {
+        if (fuzzyMatch(task.name, query)) {
+          const score = scoreTaskMatch(task, query);
+          taskMatches.push({ task, score });
+        }
+      });
+
+      taskMatches.sort((a, b) => b.score - a.score);
+      taskMatches.slice(0, 5).forEach(({ task }) => {
+        suggestions.push({
+          type: 'task',
+          text: task.name,
+          label: task.name,
+          taskId: task.id
+        });
+      });
+
+      // Suggest property names
+      const allPropertyNames = getAllPropertyNames();
+      allPropertyNames.forEach(propName => {
+        if (fuzzyMatch(propName, query)) {
+          suggestions.push({
+            type: 'property',
+            text: propName,
+            label: propName,
+            category: 'property'
+          });
+        }
+      });
+
+      // Suggest common property:value combinations
+      allPropertyNames.forEach(propName => {
+        if (fuzzyMatch(propName, query)) {
+          const valueSet = new Set();
+          tasks.forEach(task => {
+            const value = task.customProperties?.[propName];
+            if (value) {
+              valueSet.add(String(value));
+            }
+          });
+
+          // Add top 2 values for this property
+          Array.from(valueSet).slice(0, 2).forEach(value => {
+            suggestions.push({
+              type: 'property-value',
+              text: `${propName}:${value}`,
+              label: value,
+              category: propName
+            });
+          });
+        }
+      });
+    }
+
+    // Remove duplicates and limit
+    const seen = new Set();
+    return suggestions.filter(s => {
+      if (seen.has(s.text)) return false;
+      seen.add(s.text);
+      return true;
+    }).slice(0, limit);
+  };
+
   const value = {
     tasks,
     loading,
@@ -401,7 +501,8 @@ export const TaskProvider = ({ children, userId }) => {
     filters,
     setFilters,
     matchesFilters,
-    search
+    search,
+    getSuggestions
   };
 
   return (
