@@ -14,6 +14,13 @@
 **Task-specific**
 * `TaskField`
 
+**Subscription & Billing**
+* `SubscriptionPlan`: available subscription plans
+* `Subscription`: user subscriptions
+* `PaymentMethod`: user payment methods
+* `Invoice`: billing invoices
+* `Payment`: payment records
+
 ## System Node Types
 
 ### `Enum`
@@ -134,4 +141,117 @@ Core data stored on the node. Preferences such as UI settings and task property 
 
 ### `UserPreference` node
 * `name: str` name of the preference setting
-* `value: any` 
+* `value: any`
+
+## Subscription & Billing Node Types
+
+### `SubscriptionPlan` Node
+
+Available subscription tiers for users to purchase.
+
+#### Properties
+* `planId: string` (UUID, unique)
+* `name: string` (e.g., "Free", "Pro", "Enterprise")
+* `price: float` (monthly price in USD)
+* `currency: string` (default: "usd")
+* `interval: string` (enum: "month", "year")
+* `maxTasks: int` (maximum tasks allowed, -1 for unlimited)
+* `maxProjects: int` (maximum projects allowed, -1 for unlimited)
+* `maxTimeEntries: int` (maximum time entries per month, -1 for unlimited)
+* `features: array[string]` (list of feature flags)
+* `stripePriceId: string` (Stripe Price ID)
+* `stripeProductId: string` (Stripe Product ID)
+* `active: bool` (whether plan is available for new subscriptions)
+* `createdAt: datetime`
+* `updatedAt: datetime`
+
+### `Subscription` Node
+
+User's active or past subscriptions.
+
+#### Properties
+* `subscriptionId: string` (UUID, unique)
+* `stripeSubscriptionId: string` (Stripe Subscription ID)
+* `stripeCustomerId: string` (Stripe Customer ID)
+* `status: string` (enum: "active", "past_due", "canceled", "incomplete", "trialing")
+* `currentPeriodStart: datetime`
+* `currentPeriodEnd: datetime`
+* `cancelAtPeriodEnd: bool`
+* `trialStart: datetime` (nullable)
+* `trialEnd: datetime` (nullable)
+* `canceledAt: datetime` (nullable)
+* `createdAt: datetime`
+* `updatedAt: datetime`
+
+#### Edges
+* `(User)-[:HAS_SUBSCRIPTION]->(Subscription)`
+* `(Subscription)-[:FOR_PLAN]->(SubscriptionPlan)`
+
+### `PaymentMethod` Node
+
+User's saved payment methods (credit cards, bank accounts, etc.).
+
+#### Properties
+* `paymentMethodId: string` (UUID, unique)
+* `stripePaymentMethodId: string` (Stripe Payment Method ID)
+* `type: string` (enum: "card", "bank_account")
+* `last4: string` (last 4 digits of card/account)
+* `brand: string` (e.g., "visa", "mastercard")
+* `expiryMonth: int` (for cards)
+* `expiryYear: int` (for cards)
+* `isDefault: bool`
+* `createdAt: datetime`
+* `updatedAt: datetime`
+
+#### Edges
+* `(User)-[:HAS_PAYMENT_METHOD]->(PaymentMethod)`
+
+### `Invoice` Node
+
+Billing invoices for subscriptions.
+
+#### Properties
+* `invoiceId: string` (UUID, unique)
+* `stripeInvoiceId: string` (Stripe Invoice ID)
+* `amount: float`
+* `currency: string`
+* `status: string` (enum: "draft", "open", "paid", "void", "uncollectible")
+* `invoiceNumber: string`
+* `invoicePdf: string` (URL to PDF)
+* `hostedInvoiceUrl: string` (Stripe hosted page URL)
+* `periodStart: datetime`
+* `periodEnd: datetime`
+* `paid: bool`
+* `paidAt: datetime` (nullable)
+* `createdAt: datetime`
+
+#### Edges
+* `(User)-[:HAS_INVOICE]->(Invoice)`
+* `(Invoice)-[:FOR_SUBSCRIPTION]->(Subscription)`
+* `(Invoice)-[:PAID_WITH]->(Payment)`
+
+### `Payment` Node
+
+Records of successful or failed payment attempts.
+
+#### Properties
+* `paymentId: string` (UUID, unique)
+* `stripeChargeId: string` (Stripe Charge ID)
+* `amount: float`
+* `currency: string`
+* `status: string` (enum: "succeeded", "pending", "failed")
+* `failureCode: string` (nullable)
+* `failureMessage: string` (nullable)
+* `receiptUrl: string` (Stripe receipt URL)
+* `createdAt: datetime`
+
+#### Edges
+* `(Payment)-[:USING_METHOD]->(PaymentMethod)`
+
+### Subscription-related Enums
+
+Additional enum nodes for subscription system:
+* `SubscriptionStatus: ['active', 'past_due', 'canceled', 'incomplete', 'trialing']`
+* `PaymentMethodType: ['card', 'bank_account']`
+* `InvoiceStatus: ['draft', 'open', 'paid', 'void', 'uncollectible']`
+* `PaymentStatus: ['succeeded', 'pending', 'failed']`
