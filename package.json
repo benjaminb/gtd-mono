@@ -1,12 +1,31 @@
 {
   "name": "gtd-mono",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "GTD Task Management Application - Monorepo",
+  "private": true,
+  "workspaces": [
+    "backend/database",
+    "mobile"
+  ],
   "scripts": {
+    "start:api": "cd backend/database && npm start",
+    "dev:api": "cd backend/database && npm run dev",
+    "start:mobile": "cd mobile && npm start",
+    "mobile:ios": "cd mobile && npm run ios",
+    "mobile:android": "cd mobile && npm run android",
+    "setup:local": "./scripts/setup-local.sh",
+    "setup:mobile": "./scripts/setup-mobile.sh",
+    "docker:up": "docker-compose --profile ollama up -d",
+    "docker:down": "docker-compose down",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "gtd",
+    "task-management",
+    "productivity",
+    "neo4j",
+    "react-native"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": ""
+  "license": "ISC"
 }

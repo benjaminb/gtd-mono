@@ -1,8 +1,10 @@
 # GTD Task Management System
 
-A modern Getting Things Done (GTD) task management system with Neo4j graph database, subscription billing via Stripe, and AI-powered features with comprehensive security.
+A modern Getting Things Done (GTD) task management system with Neo4j graph database, subscription billing via Stripe, AI-powered features with comprehensive security, and native mobile apps for iOS and Android.
 
 ## 🚀 Quick Start
+
+### Backend API
 
 Get up and running in 3 steps:
 
@@ -25,6 +27,25 @@ npm start
 - 🗄️ Neo4j Browser: http://localhost:7474 (neo4j / password123)
 - 🤖 Ollama API: http://localhost:11434 (if enabled)
 
+### Mobile Apps (iOS/Android)
+
+For Apple Silicon Macs:
+
+```bash
+# 1. Run mobile setup script
+./scripts/setup-mobile.sh
+
+# 2. Start backend API first
+cd backend/database && npm start
+
+# 3. Start mobile app
+cd mobile && npm start
+
+# 4. Press 'i' for iOS or 'a' for Android
+```
+
+See [Mobile Development Guide](docs/MOBILE_DEVELOPMENT.md) for detailed instructions.
+
 ## 📋 What's Inside
 
 ### Core Features
@@ -40,6 +61,7 @@ npm start
 
 - **Database:** Neo4j 5.15
 - **Backend:** Node.js + Express
+- **Mobile:** React Native + Expo (iOS/Android)
 - **Payments:** Stripe
 - **AI:** OpenAI / Anthropic / Ollama (configurable)
 - **Infrastructure:** Docker Compose
@@ -176,10 +198,23 @@ gtd-mono/
 │       │   ├── enums.csv
 │       │   └── subscriptionPlans.csv
 │       └── docs/                  # Documentation
+├── mobile/
+│   ├── App.js                    # React Navigation setup
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── api.js            # API configuration
+│   │   ├── services/
+│   │   │   └── api.js            # API client
+│   │   └── screens/
+│   │       ├── HomeScreen.js
+│   │       └── SubscriptionPlansScreen.js
+│   └── .env                      # Mobile config (gitignored)
 ├── scripts/
-│   └── setup-local.sh            # Local dev setup
+│   ├── setup-local.sh            # Local dev setup
+│   └── setup-mobile.sh           # Mobile setup (Apple Silicon)
 ├── docs/
-│   └── LOCAL_DEVELOPMENT.md      # Development guide
+│   ├── LOCAL_DEVELOPMENT.md      # Backend development guide
+│   └── MOBILE_DEVELOPMENT.md     # Mobile development guide
 ├── docker-compose.yml            # Docker services
 └── .env.local.example           # Quick config
 ```
@@ -188,24 +223,43 @@ gtd-mono/
 
 ### Available Commands
 
+From the monorepo root:
+
 ```bash
+# Setup
+npm run setup:local    # Backend setup wizard
+npm run setup:mobile   # Mobile setup wizard (Apple Silicon)
+
 # API Server
-npm start              # Start server
-npm run dev           # Start with hot reload
-npm test              # Run security tests
-npm run test:ai       # Test AI connection
+npm run start:api      # Start API server
+npm run dev:api        # Start with hot reload
+
+# Mobile App
+npm run start:mobile   # Start Expo dev server
+npm run mobile:ios     # Run on iOS Simulator
+npm run mobile:android # Run on Android Emulator
 
 # Docker
-npm run docker:up     # Start all services
-npm run docker:down   # Stop all services
-npm run docker:logs   # View logs
+npm run docker:up      # Start all services
+npm run docker:down    # Stop all services
+```
 
-# Ollama
-npm run ollama:pull   # Pull a model
-npm run ollama:list   # List installed models
+From backend/database:
 
-# Database
-npm run db:setup      # Initialize database
+```bash
+npm start              # Start server
+npm run dev            # Start with hot reload
+npm test               # Run security tests
+npm run test:ai        # Test AI connection
+npm run db:setup       # Initialize database
+```
+
+From mobile:
+
+```bash
+npm start              # Start Expo dev server
+npm run ios            # Run on iOS Simulator
+npm run android        # Run on Android Emulator
 ```
 
 ### API Endpoints
@@ -243,7 +297,11 @@ POST   /api/webhooks/stripe           # Stripe webhook endpoint
 
 ## 📚 Documentation
 
-- **[Local Development Guide](docs/LOCAL_DEVELOPMENT.md)** - Complete setup instructions
+### Getting Started
+- **[Local Development Guide](docs/LOCAL_DEVELOPMENT.md)** - Backend setup instructions
+- **[Mobile Development Guide](docs/MOBILE_DEVELOPMENT.md)** - iOS/Android setup for Apple Silicon
+
+### Backend
 - **[AI Security Guide](backend/database/docs/AI_SECURITY_GUIDE.md)** - Anti-jailbreaking documentation
 - **[Subscription Setup](backend/database/SUBSCRIPTION_SETUP.md)** - Stripe configuration
 - **[Database Schema](backend/database/docs/database.md)** - Neo4j schema details
