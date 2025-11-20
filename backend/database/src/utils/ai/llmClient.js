@@ -88,11 +88,59 @@ class LLMClient {
         baseURL: `${baseURL}/v1`,
         apiKey: 'ollama', // Ollama doesn't need a real API key
       });
+      this.ollamaBaseURL = baseURL;
       console.log(`✓ Ollama client initialized (${baseURL})`);
     } catch (error) {
       console.error('Failed to initialize Ollama:', error.message);
       console.log('Run: npm install openai');
       this.provider = 'disabled';
+    }
+  }
+
+  /**
+   * Check if Ollama service is running and available
+   */
+  async checkOllamaAvailability() {
+    if (this.provider !== 'ollama') {
+      return { available: true };
+    }
+
+    try {
+      const response = await fetch(`${this.ollamaBaseURL}/api/tags`);
+      if (!response.ok) {
+        return {
+          available: false,
+          message: 'Ollama service is not responding. Start it with: ollama serve',
+        };
+      }
+
+      const data = await response.json();
+      const models = data.models || [];
+      const requiredModel = process.env.OLLAMA_MODEL || 'llama2';
+      const hasModel = models.some(m => m.name.includes(requiredModel.split(':')[0]));
+
+      if (!hasModel) {
+        return {
+          available: false,
+          message: `Ollama is running but model '${requiredModel}' not found. Pull it with: ollama pull ${requiredModel}`,
+        };
+      }
+
+      return {
+        available: true,
+        message: `✓ Ollama is running with model '${requiredModel}'`,
+      };
+    } catch (error) {
+      if (error.code === 'ECONNREFUSED') {
+        return {
+          available: false,
+          message: 'Ollama is not running. Start it with: ollama serve\nDon\'t have Ollama? Install from: https://ollama.ai',
+        };
+      }
+      return {
+        available: false,
+        message: `Cannot connect to Ollama: ${error.message}`,
+      };
     }
   }
 

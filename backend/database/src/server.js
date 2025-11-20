@@ -66,12 +66,26 @@ app.use((req, res) => {
   });
 });
 
-const start = () => {
-  app.listen(port, () => {
+const start = async () => {
+  app.listen(port, async () => {
     console.log(`Server is running on http://localhost:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`AI Provider: ${process.env.AI_PROVIDER || 'disabled'}`);
-    console.log('Available routes:');
+
+    // Check Ollama availability if configured
+    if (process.env.AI_PROVIDER === 'ollama') {
+      const llmClient = require('./utils/ai/llmClient');
+      const ollamaStatus = await llmClient.checkOllamaAvailability();
+
+      if (!ollamaStatus.available) {
+        console.log('\n⚠️  AI Features Status:');
+        console.log(ollamaStatus.message);
+      } else {
+        console.log(ollamaStatus.message);
+      }
+    }
+
+    console.log('\nAvailable routes:');
     console.log('  GET  /');
     console.log('\n  Task Management:');
     console.log('  GET    /api/tasks');

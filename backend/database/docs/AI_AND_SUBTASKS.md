@@ -1,26 +1,36 @@
 # AI Features and Subtask Management Guide
 
-This guide explains how to use the AI-powered features and subtask management in the GTD task management system.
-
 ## Table of Contents
 
-1. [AI Features Setup](#ai-features-setup)
-2. [Using Ollama for Local Development](#using-ollama-for-local-development)
+1. [Quick Start](#quick-start)
+2. [AI Configuration](#ai-configuration)
 3. [Subtask Management](#subtask-management)
 4. [API Endpoints](#api-endpoints)
 5. [Examples](#examples)
 
 ---
 
-## AI Features Setup
+## Quick Start
 
-### Default Configuration for Local Development
+```bash
+# Start the database
+docker-compose up -d neo4j
 
-The system is configured to use **Ollama** as the default AI provider for local development. This provides free, self-hosted AI capabilities without requiring API keys.
+# Start your backend server (AI checks happen automatically)
+cd backend/database
+npm install
+npm run dev
+```
 
-### Environment Configuration
+The server will check if Ollama is available at startup and let you know the status.
 
-The `.env.example` files are pre-configured with Ollama as the default:
+---
+
+## AI Configuration
+
+### Default: Ollama (Local Development)
+
+The system uses **Ollama** by default - no API keys needed. The server will check if it's available and tell you if you need to install or start it.
 
 ```bash
 AI_PROVIDER=ollama
@@ -28,121 +38,26 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama2
 ```
 
-### Starting the System with AI
+**Don't have Ollama?** Install it from https://ollama.ai
 
-#### Option 1: Using Docker Compose (Recommended)
+### Alternative Providers
 
-```bash
-# Start Neo4j database
-docker-compose up -d neo4j
-
-# Start Ollama service
-docker-compose --profile ollama up -d ollama
-
-# Pull the Llama2 model (or your preferred model)
-docker exec -it gtd-ollama ollama pull llama2
-
-# Verify Ollama is running
-docker exec gtd-ollama ollama list
-
-# Start your backend server
-cd backend/database
-npm install
-npm run dev
-```
-
-#### Option 2: Local Development without Docker
-
-If you have Ollama installed locally:
-
-```bash
-# Start Ollama (if not running)
-ollama serve
-
-# Pull a model
-ollama pull llama2
-
-# Start the backend
-cd backend/database
-npm install
-npm run dev
-```
-
-### Alternative AI Providers
-
-#### Using OpenAI
-
+**OpenAI:**
 ```bash
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-api-key
-OPENAI_MODEL=gpt-4
 ```
 
-#### Using Anthropic Claude
-
+**Anthropic:**
 ```bash
 AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-your-api-key
-ANTHROPIC_MODEL=claude-3-sonnet-20240229
 ```
 
-#### Disabling AI Features
-
+**Disable AI:**
 ```bash
 AI_PROVIDER=disabled
 ```
-
----
-
-## Using Ollama for Local Development
-
-### Why Ollama?
-
-- **Free**: No API costs
-- **Private**: All data stays on your machine
-- **Fast**: Low-latency responses for local development
-- **No Rate Limits**: Unlimited requests
-
-### Available Models
-
-You can use any model supported by Ollama. Popular choices:
-
-- `llama2` - Good general-purpose model (default)
-- `llama2:13b` - Larger, more capable version
-- `mistral` - Fast and efficient
-- `codellama` - Optimized for code-related tasks
-- `phi` - Small and fast
-
-To change the model:
-
-```bash
-# Pull the model
-docker exec -it gtd-ollama ollama pull mistral
-
-# Update your .env
-OLLAMA_MODEL=mistral
-```
-
-### Troubleshooting Ollama
-
-**Ollama container not responding:**
-```bash
-docker logs gtd-ollama
-docker restart gtd-ollama
-```
-
-**Model not found:**
-```bash
-# List available models
-docker exec gtd-ollama ollama list
-
-# Pull the missing model
-docker exec -it gtd-ollama ollama pull llama2
-```
-
-**Connection refused:**
-- Ensure Ollama is running: `docker ps | grep ollama`
-- Check the base URL matches: `OLLAMA_BASE_URL=http://localhost:11434`
 
 ---
 
@@ -497,81 +412,8 @@ AI_JAILBREAK_THRESHOLD=70
 
 ---
 
-## Performance Tips
-
-### Ollama Model Selection
-
-- **Development/Testing**: Use smaller models like `llama2` or `phi`
-- **Production**: Consider `llama2:13b` or `mistral` for better quality
-- **Code-heavy tasks**: Use `codellama`
-
-### Caching
-
-The LLM client includes automatic caching to reduce repeated requests.
-
-### Rate Limiting
-
-When using paid APIs (OpenAI/Anthropic), consider implementing rate limiting:
-- Set appropriate `MAX_TOKENS` values
-- Monitor usage through provider dashboards
-- Use Ollama for development to avoid costs
-
----
-
 ## Troubleshooting
 
-### AI Features Not Working
+**Subtask cycle errors:** Use `GET /api/tasks/:id/parent` to check the current hierarchy before making changes.
 
-1. **Check AI provider is enabled:**
-   ```bash
-   echo $AI_PROVIDER
-   # Should show: ollama
-   ```
-
-2. **Verify Ollama is running:**
-   ```bash
-   docker ps | grep ollama
-   curl http://localhost:11434/api/tags
-   ```
-
-3. **Check model is available:**
-   ```bash
-   docker exec gtd-ollama ollama list
-   ```
-
-4. **Check server logs:**
-   ```bash
-   # Look for "✓ AI Suggestion Service initialized with ollama"
-   npm run dev
-   ```
-
-### Subtask Cycle Errors
-
-If you get cycle errors:
-1. Use `GET /api/tasks/:id/parent` to check current parent
-2. Remove existing relationships if needed
-3. Verify the hierarchy structure before creating relationships
-
-### No AI Suggestions Appearing
-
-1. Ensure AI_PROVIDER is not set to 'disabled'
-2. Check that Ollama has the model pulled
-3. Verify network connectivity between API and Ollama
-4. Check AI provider configuration in server startup logs
-
----
-
-## Next Steps
-
-- [ ] Set up authentication middleware (currently mocked)
-- [ ] Implement frontend integration
-- [ ] Add more AI features (task prioritization, deadline suggestions)
-- [ ] Create visualization for task hierarchies
-- [ ] Add batch operations for task management
-
----
-
-For more information, see:
-- [Database Schema](./database.md)
-- [AI Security Guide](./AI_SECURITY_GUIDE.md)
-- [Ollama Documentation](https://ollama.ai/docs)
+**AI not working:** Check the server logs on startup - they'll tell you if Ollama needs to be installed or started.
