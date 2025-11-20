@@ -4,28 +4,34 @@ A modern Getting Things Done (GTD) task management system with Neo4j graph datab
 
 ## 🚀 Quick Start
 
-### Backend API
+### Prerequisites
 
-Get up and running in 3 steps:
+- **Docker Desktop** running - [Get Docker](https://www.docker.com/products/docker-desktop)
+- **Node.js 18+** - [Get Node.js](https://nodejs.org/)
+
+### Three Steps to Run Locally
 
 ```bash
-# 1. Clone and setup
-git clone <your-repo-url>
-cd gtd-mono
-
-# 2. Run setup script
+# 1. Run setup (starts Neo4j, initializes DB, creates .env)
 ./scripts/setup-local.sh
 
-# 3. Start developing
-cd backend/database
-npm install
+# 2. Install dependencies
+cd backend/database && npm install
+
+# 3. Start the API server
 npm start
 ```
+
+**That's it!** Your server is running at http://localhost:3000
+
+**What the setup script does:**
+- Starts Neo4j in Docker (if not running)
+- Creates `.env` file with sensible defaults
+- Initializes the database schema and seed data
 
 **Access:**
 - 🌐 API Server: http://localhost:3000
 - 🗄️ Neo4j Browser: http://localhost:7474 (neo4j / password123)
-- 🤖 Ollama API: http://localhost:11434 (if enabled)
 
 ### Mobile Apps (iOS/Android)
 
@@ -66,63 +72,35 @@ See [Mobile Development Guide](docs/MOBILE_DEVELOPMENT.md) for detailed instruct
 - **AI:** OpenAI / Anthropic / Ollama (configurable)
 - **Infrastructure:** Docker Compose
 
-## 🎯 AI Provider Options
+## 🤖 AI Configuration (Optional)
 
-Choose your AI setup based on your needs:
+AI features are **optional** and disabled by default. Configure them in `backend/database/.env`:
 
-### 1. Ollama (Self-Hosted) - Recommended for Development
-
-```bash
-# Start with Ollama
-docker-compose --profile ollama up -d
-
-# Pull a model
-docker exec -it gtd-ollama ollama pull llama2
-
-# Configure .env
-AI_PROVIDER=ollama
-OLLAMA_MODEL=llama2
+### Option 1: Disabled (Default)
+```env
+AI_PROVIDER=disabled
 ```
 
-**Pros:**
-- ✅ Free and private
-- ✅ Works offline
-- ✅ No API keys needed
-- ✅ Great for development
-
-**Cons:**
-- ⚠️ Slower than cloud APIs
-- ⚠️ Requires decent hardware
-
-### 2. OpenAI - Best for Production
-
+### Option 2: OpenAI
 ```env
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-key
 OPENAI_MODEL=gpt-4
 ```
 
-**Pros:**
-- ✅ Fast and accurate
-- ✅ Production-ready
-- ✅ Latest models
-
-**Cons:**
-- ⚠️ Costs money
-- ⚠️ Requires API key
-
-### 3. Anthropic (Claude) - Best for Complex Tasks
-
+### Option 3: Anthropic (Claude)
 ```env
 AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-your-key
 ANTHROPIC_MODEL=claude-3-sonnet-20240229
 ```
 
-### 4. Disabled - No AI Features
-
+### Option 4: Ollama (Self-Hosted)
+If you have Ollama running locally:
 ```env
-AI_PROVIDER=disabled
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
 ```
 
 ## 🗄️ Database Architecture
