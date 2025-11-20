@@ -8,6 +8,11 @@ const port = process.env.PORT || 3000;
 const neo4jDriver = require('./utils/database');
 
 // Import routes
+const userRoutes = require('./routes/users');
+const taskRoutes = require('./routes/tasks');
+const suggestionRoutes = require('./routes/suggestions');
+const propertySchemaRoutes = require('./routes/propertySchemas');
+const analyticsRoutes = require('./routes/analytics');
 const subscriptionRoutes = require('./routes/subscriptions');
 const paymentMethodRoutes = require('./routes/paymentMethods');
 const invoiceRoutes = require('./routes/invoices');
@@ -16,29 +21,6 @@ const webhookRoutes = require('./routes/webhooks');
 // Webhook route needs raw body for signature verification
 // Must be defined BEFORE express.json() middleware
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
-
-// Parse JSON bodies for all other routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// CORS middleware (configure as needed for your frontend)
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-// Health check endpoint
-// Import routes
-const userRoutes = require('./routes/users');
-const taskRoutes = require('./routes/tasks');
-const suggestionRoutes = require('./routes/suggestions');
-const propertySchemaRoutes = require('./routes/propertySchemas');
-const analyticsRoutes = require('./routes/analytics');
 
 // Middleware
 app.use(cors());
@@ -63,6 +45,11 @@ app.get('/', (req, res) => {
 // API Routes
 // Note: These routes assume authentication middleware will be added
 // For now, they expect req.user to be set by authentication middleware
+app.use('/api/users', userRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/property-schemas', propertySchemaRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/invoices', invoiceRoutes);
@@ -90,21 +77,16 @@ const start = () => {
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log('Available routes:');
     console.log('  GET  /');
-    console.log('  GET  /api/subscriptions/plans');
-    console.log('  GET  /api/subscriptions/current');
-    console.log('  POST /api/subscriptions/create');
-    console.log('  PUT  /api/subscriptions/update');
-    console.log('  POST /api/subscriptions/cancel');
-    console.log('  POST /api/subscriptions/reactivate');
-    console.log('  GET  /api/subscriptions/usage');
-    console.log('  GET  /api/payment-methods');
-    console.log('  POST /api/payment-methods');
-    console.log('  DELETE /api/payment-methods/:id');
-    console.log('  PUT  /api/payment-methods/:id/default');
-    console.log('  GET  /api/invoices');
-    console.log('  GET  /api/invoices/upcoming');
-    console.log('  GET  /api/invoices/:id');
-    console.log('  POST /api/webhooks/stripe');
+    console.log('  POST /api/users - Register user');
+    console.log('  POST /api/users/login - Login');
+    console.log('  GET  /api/users/:id/tasks - Get user tasks');
+    console.log('  GET  /api/tasks');
+    console.log('  POST /api/tasks');
+    console.log('  POST /api/tasks/search - Search with filters');
+    console.log('  GET  /api/property-schemas');
+    console.log('  POST /api/property-schemas');
+    console.log('  GET  /api/analytics/*');
+    console.log('  POST /api/suggestions/*');
   });
 };
 

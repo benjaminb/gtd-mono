@@ -7,36 +7,54 @@ const User = require('../models/User');
  * Create a new user
  */
 router.post('/', async (req, res) => {
+  console.log('=== User Registration Request ===');
+  console.log('Request body:', req.body);
+
   try {
     const { username, email, password } = req.body;
+    console.log('Extracted fields:', { username, email, hasPassword: !!password });
 
     // Validate required fields
     if (!username || !email || !password) {
+      console.log('Validation failed: Missing required fields');
       return res.status(400).json({
         error: 'Missing required fields: username, email, password'
       });
     }
 
     // Check if user already exists
+    console.log('Checking for existing email...');
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
+      console.log('Email already exists');
       return res.status(409).json({
         error: 'User with this email already exists'
       });
     }
 
+    console.log('Checking for existing username...');
     const existingUsername = await User.findByUsername(username);
     if (existingUsername) {
+      console.log('Username already taken');
       return res.status(409).json({
         error: 'Username already taken'
       });
     }
 
+    console.log('Creating user...');
     const user = await User.create({ username, email, password });
+    console.log('User created successfully:', user.id);
     res.status(201).json(user);
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    console.error('=== ERROR CREATING USER ===');
+    console.error('Error object:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('=== END ERROR ===');
+    res.status(500).json({
+      error: 'Failed to create user',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
