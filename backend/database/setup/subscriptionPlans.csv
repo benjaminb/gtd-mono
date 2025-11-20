@@ -1,0 +1,4 @@
+planId,name,price,currency,interval,maxTasks,maxProjects,maxTimeEntries,features,stripePriceId,stripeProductId,active
+plan_free_001,Free,0,usd,month,100,5,100,"basic_tasks|basic_time_tracking",price_free,prod_free,true
+plan_pro_001,Pro,9.99,usd,month,1000,50,-1,"basic_tasks|advanced_time_tracking|custom_fields|reports|api_access",price_pro,prod_pro,true
+plan_enterprise_001,Enterprise,29.99,usd,month,-1,-1,-1,"basic_tasks|advanced_time_tracking|custom_fields|reports|api_access|priority_support|data_export|team_collaboration",price_enterprise,prod_enterprise,true
