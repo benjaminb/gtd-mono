@@ -14,6 +14,34 @@
 **Task-specific**
 * `TaskField`
 
+## Tasks
+
+### Entities
+* `(:Task)`: the base node for a task. Its metadata comes from relations to `TaskProperty` nodes
+    * `id`
+    * `done: bool`
+    * `name: str`
+* `(:TaskProperty)`: a task property which can be system-defined, user-defined, or AI-suggested
+    * `name`: name of the property (e.g. "due date")
+    * `dtype`: one of the currently supported data types
+    * `origin`: `{'user', 'base', 'auto'}`
+* `[:HAS_PROP]`: relation from `Task` to `TaskProperty`
+    * `value`: the value for the given property. Must match the property's `dtype`!
+
+Example: 
+```cypher
+(:Task {
+    name: "mow the lawn"
+})-[:HAS_PROP {
+    value: "6-19-25 12:00:00 PM"
+}]->(:TaskProperty {
+    name: "deadline",
+    dtype: "datetime"
+})
+```
+
+Here we see the task "mow the lawn" has a relationship to the "dealine" task property, which expects to have a datetime property. We see the deadline on the `HAS_PROP` relationship.
+
 ## System Node Types
 
 ### `Enum`
