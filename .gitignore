@@ -33,3 +33,7 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Web build output
+web/dist
+web/.vite
