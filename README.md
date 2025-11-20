@@ -2,6 +2,26 @@
 
 A comprehensive Getting Things Done (GTD) task management application with AI-powered suggestions, custom property schemas, boolean search, and advanced analytics. Built with Neo4j graph database, Node.js, and React.
 
+## 🏃 Quick Start (TL;DR)
+
+**Run ONE command to start everything:**
+
+```bash
+./scripts/start-all.sh
+```
+
+Then open **http://localhost:5173**
+
+**Prerequisites:** Docker Desktop + Node.js 18+
+
+**What it does:**
+- Starts Neo4j database (if not running)
+- Installs dependencies (if needed)
+- Starts backend API (http://localhost:3000)
+- Starts frontend web app (http://localhost:5173)
+
+Press Ctrl+C to stop everything.
+
 ## Features
 
 ### Core Task Management
@@ -164,92 +184,52 @@ gtd-mono/                         # Monorepo root
 └── README.md
 ```
 
-## Quick Start
+## 🚀 Running the Full Stack Locally
 
 ### Prerequisites
 
-- **Node.js** v16 or higher
-- **Neo4j** v4.4 or higher (local or cloud instance)
-- **(Optional)** OpenAI API key for AI features
-- **(Optional)** Anthropic API key for Claude
-- **(Optional)** Ollama for local LLM
+- **Docker Desktop** running - [Get Docker](https://www.docker.com/products/docker-desktop)
+- **Node.js 18+** - [Get Node.js](https://nodejs.org/)
 
-### 1. Set Up Neo4j Database
-
-**Option A: Neo4j Desktop** (recommended for local development)
-1. Download [Neo4j Desktop](https://neo4j.com/download/)
-2. Create a new database
-3. Start the database
-4. Note the URI (usually `bolt://localhost:7687`), username, and password
-
-**Option B: Neo4j Aura** (cloud)
-1. Sign up at [Neo4j Aura](https://neo4j.com/cloud/aura/)
-2. Create a free instance
-3. Note the connection URI, username, and password
-
-### 2. Set Up Backend
+### Option 1: Start Everything with One Script (Recommended)
 
 ```bash
+./scripts/start-all.sh
+```
+
+This starts Neo4j, backend, and frontend all at once. Press Ctrl+C to stop everything.
+
+### Option 2: Start Services Manually (Multiple Terminals)
+
+```bash
+# Terminal 1: Start Neo4j database
+./scripts/setup-local.sh
+
+# Terminal 2: Start backend API
 cd backend/database
 npm install
-```
-
-Create `.env` file:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your configuration:
-```env
-# Neo4j Configuration
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your-password
-
-# Server Configuration
-PORT=3000
-
-# LLM Configuration (optional - choose one)
-LLM_PROVIDER=openai              # or 'anthropic' or 'ollama'
-
-# OpenAI (if using)
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
-
-# Anthropic (if using)
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
-
-# Ollama (if using local model)
-OLLAMA_MODEL=llama3.1
-OLLAMA_BASE_URL=http://localhost:11434
-```
-
-Start the backend:
-```bash
 npm start
-```
 
-Backend will be running at `http://localhost:3000`
-
-### 3. Set Up Frontend
-
-```bash
+# Terminal 3: Start frontend web app
 cd frontend
 npm install
-```
-
-Create `.env` (if needed):
-```env
-VITE_API_URL=http://localhost:3000
-```
-
-Start the frontend:
-```bash
 npm run dev
 ```
 
-Frontend will open at `http://localhost:5173`
+### What Each Service Does
+
+- **Neo4j** (port 7474/7687) - Graph database for storing tasks
+  - Web UI: http://localhost:7474 (neo4j / password123)
+- **Backend API** (port 3000) - Express server with REST endpoints
+  - Health check: http://localhost:3000
+- **Frontend** (port 5173) - React web app
+  - Main app: http://localhost:5173
+
+### First Time Setup
+
+1. Open http://localhost:5173
+2. Click "Register" and create an account
+3. Start creating tasks!
 
 ### 4. Set Up Mobile App (Optional)
 

@@ -90,7 +90,6 @@ const TaskNode = ({ task, onEdit, onAddSubtask }) => {
 
   const customProps = task.customProperties || {};
   const hasCustomProps = Object.keys(customProps).length > 0;
-  const source = task.source || 'user';
   const isAiSuggested = source === 'ai-suggested';
   const isAiAccepted = source === 'ai-accepted';
 

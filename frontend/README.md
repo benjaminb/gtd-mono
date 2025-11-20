@@ -2,6 +2,36 @@
 
 A React-based single-page application for graph-based task management.
 
+## 🚀 Running the Full Stack
+
+**⚠️ This frontend requires the backend API and Neo4j database to be running.**
+
+For complete setup instructions, see the main [README.md](../README.md#-running-the-full-stack-locally) in the project root.
+
+### Quick Start (assumes backend is running)
+
+```bash
+npm install
+npm run dev
+```
+
+The app will open at `http://localhost:5173`
+
+### Running Everything
+
+If you need to start the entire stack:
+
+```bash
+# Terminal 1: Start Neo4j
+cd .. && ./scripts/setup-local.sh
+
+# Terminal 2: Start backend
+cd ../backend/database && npm install && npm start
+
+# Terminal 3: Start frontend (this)
+npm install && npm run dev
+```
+
 ## Features
 
 - **Tree View Interface**: Visual hierarchical display of tasks and subtasks
@@ -9,27 +39,6 @@ A React-based single-page application for graph-based task management.
 - **Custom Properties**: Define and manage your own task properties
 - **Real-time Updates**: All tasks loaded into memory for instant interactions
 - **User Authentication**: Simple login/register system
-
-## Setup
-
-### Prerequisites
-
-- Node.js (v14+)
-- Backend API running on `http://localhost:3000`
-
-### Installation
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Start the development server:
-```bash
-npm run dev
-```
-
-The app will open at `http://localhost:5173`
 
 ## Usage
 
