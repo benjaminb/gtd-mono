@@ -1,17 +1,27 @@
 {
-  "name": "database",
+  "name": "gtd-api",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "GTD Task Management API with Neo4j and AI features",
+  "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "init-db": "node src/utils/initDatabase.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node src/utils/ai/__tests__/promptSecurity.test.js",
+    "test:ai": "node -e \"require('./src/utils/ai/llmClient').test().then(r => console.log(JSON.stringify(r, null, 2)))\"",
+    "examples:ai": "node src/utils/ai/examples.js",
+    "docker:up": "cd ../.. && docker-compose up -d",
+    "docker:down": "cd ../.. && docker-compose down",
+    "docker:logs": "cd ../.. && docker-compose logs -f",
+    "db:setup": "docker exec gtd-neo4j cypher-shell -u neo4j -p password123 < setup/constraints.cypher && docker exec gtd-neo4j cypher-shell -u neo4j -p password123 < setup/indexes.cypher",
+    "ollama:pull": "docker exec -it gtd-ollama ollama pull",
+    "ollama:list": "docker exec gtd-ollama ollama list"
   },
-  "keywords": [],
+  "keywords": ["gtd", "task-management", "neo4j", "ai", "stripe"],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -21,6 +31,14 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "stripe": "^19.3.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

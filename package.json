@@ -9,13 +9,28 @@
     "backend/database"
   ],
   "scripts": {
+    "start:api": "cd backend/database && npm start",
+    "dev:api": "cd backend/database && npm run dev",
+    "start:mobile": "cd mobile && npm start",
+    "mobile:ios": "cd mobile && npm run ios",
+    "mobile:android": "cd mobile && npm run android",
+    "setup:local": "./scripts/setup-local.sh",
+    "setup:mobile": "./scripts/setup-mobile.sh",
+    "docker:up": "docker-compose --profile ollama up -d",
+    "docker:down": "docker-compose down",
     "dev:web": "cd frontend && npm run dev",
     "dev:mobile": "cd mobile && npm start",
     "dev:backend": "cd backend/database && npm run dev",
     "build:web": "cd frontend && npm run build",
     "test": "npm run test --workspaces"
   },
-  "keywords": [],
+  "keywords": [
+    "gtd",
+    "task-management",
+    "productivity",
+    "neo4j",
+    "react-native"
+  ],
   "author": "",
   "license": "ISC",
   "description": "GTD Task Manager - Monorepo"
