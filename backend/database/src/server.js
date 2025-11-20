@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 const neo4jDriver = require('./utils/database');
 
 // Import routes
+const taskRoutes = require('./routes/tasks');
 const subscriptionRoutes = require('./routes/subscriptions');
 const paymentMethodRoutes = require('./routes/paymentMethods');
 const invoiceRoutes = require('./routes/invoices');
@@ -43,6 +44,7 @@ app.get('/', (req, res) => {
 // API Routes
 // Note: These routes assume authentication middleware will be added
 // For now, they expect req.user to be set by authentication middleware
+app.use('/api/tasks', taskRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/invoices', invoiceRoutes);
@@ -68,8 +70,23 @@ const start = () => {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`AI Provider: ${process.env.AI_PROVIDER || 'disabled'}`);
     console.log('Available routes:');
     console.log('  GET  /');
+    console.log('\n  Task Management:');
+    console.log('  GET    /api/tasks');
+    console.log('  GET    /api/tasks/:id');
+    console.log('  POST   /api/tasks');
+    console.log('  PUT    /api/tasks/:id');
+    console.log('  DELETE /api/tasks/:id');
+    console.log('  POST   /api/tasks/:id/make-subtask');
+    console.log('  DELETE /api/tasks/:id/subtask-relationship');
+    console.log('  GET    /api/tasks/:id/parent');
+    console.log('\n  AI Features:');
+    console.log('  POST   /api/tasks/:id/suggest-fields');
+    console.log('  POST   /api/tasks/:id/suggest-subtasks');
+    console.log('  POST   /api/tasks/insights');
+    console.log('\n  Subscriptions:');
     console.log('  GET  /api/subscriptions/plans');
     console.log('  GET  /api/subscriptions/current');
     console.log('  POST /api/subscriptions/create');
@@ -77,6 +94,7 @@ const start = () => {
     console.log('  POST /api/subscriptions/cancel');
     console.log('  POST /api/subscriptions/reactivate');
     console.log('  GET  /api/subscriptions/usage');
+    console.log('\n  Payment & Billing:');
     console.log('  GET  /api/payment-methods');
     console.log('  POST /api/payment-methods');
     console.log('  DELETE /api/payment-methods/:id');
@@ -84,6 +102,7 @@ const start = () => {
     console.log('  GET  /api/invoices');
     console.log('  GET  /api/invoices/upcoming');
     console.log('  GET  /api/invoices/:id');
+    console.log('\n  Webhooks:');
     console.log('  POST /api/webhooks/stripe');
   });
 };
