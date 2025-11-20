@@ -116,7 +116,7 @@ class LLMClient {
 
       const data = await response.json();
       const models = data.models || [];
-      const requiredModel = process.env.OLLAMA_MODEL || 'llama2';
+      const requiredModel = process.env.OLLAMA_MODEL || 'mistral-nemo';
       const hasModel = models.some(m => m.name.includes(requiredModel.split(':')[0]));
 
       if (!hasModel) {
@@ -211,7 +211,7 @@ class LLMClient {
 
   async completeOllama(prompt, options = {}) {
     const {
-      model = process.env.OLLAMA_MODEL || 'llama2',
+      model = process.env.OLLAMA_MODEL || 'mistral-nemo',
       maxTokens = parseInt(process.env.OLLAMA_MAX_TOKENS) || 500,
       temperature = parseFloat(process.env.OLLAMA_TEMPERATURE) || 0.7,
     } = options;
@@ -289,7 +289,7 @@ class LLMClient {
       case 'ollama':
         return {
           baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-          model: process.env.OLLAMA_MODEL || 'llama2',
+          model: process.env.OLLAMA_MODEL || 'mistral-nemo',
           maxTokens: process.env.OLLAMA_MAX_TOKENS || 500,
           temperature: process.env.OLLAMA_TEMPERATURE || 0.7,
         };

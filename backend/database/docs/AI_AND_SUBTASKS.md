@@ -35,7 +35,7 @@ The system uses **Ollama** by default - no API keys needed. The server will chec
 ```bash
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama2
+OLLAMA_MODEL=mistral-nemo  # Change this to use a different model
 ```
 
 **Don't have Ollama?** Install it from https://ollama.ai
